@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import TransactionModal from '@/components/TransactionModal';
 import TransactionsList from '@/components/TransactionsList';
 import FinancialCharts from '@/components/FinancialCharts';
 import Sidebar from '@/components/Sidebar';
+import DownloadManager from '@/components/DownloadManager';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface Transaction {
@@ -265,6 +265,9 @@ const Index = () => {
               </div>
 
               <FinancialCharts transactions={transactions} detailed={true} />
+
+              {/* Downloads Section */}
+              <DownloadManager transactions={transactions} user={user} />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="shadow-lg">

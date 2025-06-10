@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 interface Transaction {
   id: string;
@@ -18,78 +17,7 @@ interface FinancialChartsProps {
 }
 
 const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detailed = false }) => {
-  const COLORS = {
-    income: '#10b981',
-    expense: '#ef4444',
-    categories: [
-      '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981',
-      '#f97316', '#84cc16', '#06b6d4', '#ec4899', '#6366f1'
-    ]
-  };
-
-  // Dados para o gráfico de pizza (Receitas vs Despesas)
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const pieData = [
-    { name: 'Receitas', value: totalIncome, color: COLORS.income },
-    { name: 'Despesas', value: totalExpenses, color: COLORS.expense }
-  ].filter(item => item.value > 0);
-
-  // Dados por categoria
-  const categoryData = transactions.reduce((acc, transaction) => {
-    const existing = acc.find(item => item.category === transaction.category);
-    if (existing) {
-      existing.amount += transaction.amount;
-    } else {
-      acc.push({
-        category: transaction.category,
-        amount: transaction.amount,
-        type: transaction.type
-      });
-    }
-    return acc;
-  }, [] as { category: string; amount: number; type: string }[])
-  .sort((a, b) => b.amount - a.amount)
-  .slice(0, 8);
-
-  // Dados mensais (últimos 6 meses)
-  const getMonthlyData = () => {
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
-      
-      const monthTransactions = transactions.filter(t => 
-        t.date.startsWith(monthKey)
-      );
-      
-      const income = monthTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
-      
-      const expenses = monthTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-      
-      months.push({
-        month: monthName,
-        receitas: income,
-        despesas: expenses,
-        saldo: income - expenses
-      });
-    }
-    return months;
-  };
-
-  const monthlyData = getMonthlyData();
+  const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#06b6d4'];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -98,40 +26,87 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
     }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium">{`${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
-              {`${entry.dataKey}: ${formatCurrency(entry.value)}`}
-            </p>
-          ))}
-        </div>
-      );
+  // Dados para gráfico de pizza (receitas vs despesas)
+  const pieData = [
+    {
+      name: 'Receitas',
+      value: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+      color: '#10b981'
+    },
+    {
+      name: 'Despesas',
+      value: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+      color: '#ef4444'
     }
-    return null;
-  };
+  ].filter(item => item.value > 0);
+
+  // Dados por categoria
+  const categoryData = React.useMemo(() => {
+    const categoryMap = new Map<string, { income: number; expense: number }>();
+    
+    transactions.forEach(transaction => {
+      const existing = categoryMap.get(transaction.category) || { income: 0, expense: 0 };
+      if (transaction.type === 'income') {
+        existing.income += transaction.amount;
+      } else {
+        existing.expense += transaction.amount;
+      }
+      categoryMap.set(transaction.category, existing);
+    });
+
+    return Array.from(categoryMap.entries()).map(([category, amounts]) => ({
+      category,
+      receitas: amounts.income,
+      despesas: amounts.expense,
+      total: amounts.income - amounts.expense
+    }));
+  }, [transactions]);
+
+  // Dados mensais
+  const monthlyData = React.useMemo(() => {
+    const monthMap = new Map<string, { income: number; expense: number }>();
+    
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      const existing = monthMap.get(monthKey) || { income: 0, expense: 0 };
+      if (transaction.type === 'income') {
+        existing.income += transaction.amount;
+      } else {
+        existing.expense += transaction.amount;
+      }
+      monthMap.set(monthKey, existing);
+    });
+
+    return Array.from(monthMap.entries())
+      .map(([month, amounts]) => ({
+        month: new Date(month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+        receitas: amounts.income,
+        despesas: amounts.expense,
+        saldo: amounts.income - amounts.expense
+      }))
+      .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
+      .slice(-6);
+  }, [transactions]);
 
   if (transactions.length === 0) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Distribuição Financeira</CardTitle>
+            <CardTitle>Distribuição por Tipo</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center h-64">
-            <p className="text-gray-500">Adicione transações para ver os gráficos</p>
+            <p className="text-gray-500">Nenhum dado disponível</p>
           </CardContent>
         </Card>
-        
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Histórico Mensal</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center h-64">
-            <p className="text-gray-500">Dados insuficientes para o gráfico</p>
+            <p className="text-gray-500">Nenhum dado disponível</p>
           </CardContent>
         </Card>
       </div>
@@ -140,11 +115,11 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Gráfico de Pizza */}
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Distribuição Financeira</CardTitle>
+            <CardTitle>Distribuição por Tipo</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -154,7 +129,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -163,49 +138,47 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Gráfico de Barras Mensal */}
+        {/* Histórico Mensal */}
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Histórico Mensal</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <LineChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
-                <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar dataKey="receitas" fill={COLORS.income} name="Receitas" />
-                <Bar dataKey="despesas" fill={COLORS.expense} name="Despesas" />
-              </BarChart>
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Line type="monotone" dataKey="receitas" stroke="#10b981" strokeWidth={2} />
+                <Line type="monotone" dataKey="despesas" stroke="#ef4444" strokeWidth={2} />
+                <Line type="monotone" dataKey="saldo" stroke="#3b82f6" strokeWidth={2} />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {detailed && categoryData.length > 0 && (
+      {detailed && (
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Gastos por Categoria</CardTitle>
+            <CardTitle>Análise por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={categoryData} layout="horizontal" margin={{ top: 20, right: 30, left: 100, bottom: 5 }}>
+              <BarChart data={categoryData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
-                <YAxis dataKey="category" type="category" width={90} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Bar 
-                  dataKey="amount" 
-                  fill={(entry: any) => entry.type === 'income' ? COLORS.income : COLORS.expense} 
-                />
+                <XAxis dataKey="category" />
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Bar dataKey="receitas" fill="#10b981" />
+                <Bar dataKey="despesas" fill="#ef4444" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
