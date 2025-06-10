@@ -92,14 +92,14 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
     font-family: 'Inter', sans-serif;
   }
 }
 
 /* Glassmorphism efeitos */
 .glassmorphism {
-  @apply bg-white/80 backdrop-blur-lg border border-white/30 shadow-lg;
+  @apply bg-card/80 backdrop-blur-lg border border-border/30 shadow-lg;
 }
 
 /* Animations */
@@ -109,36 +109,45 @@
 
 /* Style Overrides */
 .recharts-tooltip-wrapper .recharts-default-tooltip {
-  @apply bg-white/95 border border-gray-200 !shadow-lg p-1 !opacity-100 backdrop-blur-sm;
+  @apply bg-card/95 border border-border !shadow-lg p-1 !opacity-100 backdrop-blur-sm;
 }
 
 .recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-label {
-  @apply text-gray-900 font-medium;
+  @apply text-foreground font-medium;
 }
 
 .recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item {
-  @apply text-gray-700 text-sm;
+  @apply text-muted-foreground text-sm;
 }
 
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  @apply stroke-gray-200;
+  @apply stroke-border;
 }
 
 .recharts-xAxis .recharts-cartesian-axis-line,
 .recharts-yAxis .recharts-cartesian-axis-line {
-  @apply stroke-gray-300;
+  @apply stroke-border;
 }
 
 .recharts-xAxis .recharts-cartesian-axis-tick-line,
 .recharts-yAxis .recharts-cartesian-axis-tick-line {
-  @apply stroke-gray-300;
+  @apply stroke-border;
 }
 
 .recharts-text.recharts-label {
-  @apply fill-gray-700;
+  @apply fill-muted-foreground;
 }
 
 .recharts-text.recharts-cartesian-axis-tick-value {
-  @apply text-xs fill-gray-700;
+  @apply text-xs fill-muted-foreground;
+}
+
+/* Dark mode specific improvements */
+.dark .bg-gradient-to-br {
+  @apply shadow-2xl;
+}
+
+.dark .shadow-lg {
+  @apply shadow-2xl shadow-black/20;
 }

@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 bg-white shadow-md"
+        className="lg:hidden fixed top-4 left-4 z-50 bg-card shadow-md border"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </Button>
@@ -56,36 +56,36 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
 
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg z-40
+        fixed top-0 left-0 h-full w-64 bg-card border-r border-border shadow-lg z-40
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-0
       `}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-gray-900">Financeiro</h1>
-                <p className="text-xs text-gray-500">v0.1.2</p>
+                <h1 className="font-bold text-foreground">Financeiro</h1>
+                <p className="text-xs text-muted-foreground">v0.1.2</p>
               </div>
             </div>
           </div>
 
           {/* User Info */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-blue-600">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">
                   {userName.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">{userName}</p>
-                <p className="text-xs text-gray-500">Usuário ativo</p>
+                <p className="text-sm font-medium text-foreground">{userName}</p>
+                <p className="text-xs text-muted-foreground">Usuário ativo</p>
               </div>
             </div>
           </div>
@@ -101,8 +101,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
                       variant={currentPage === item.id ? 'default' : 'ghost'}
                       className={`w-full justify-start ${
                         currentPage === item.id
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                          : 'hover:bg-gray-100'
+                          ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
                       }`}
                       onClick={() => handlePageChange(item.id)}
                     >
@@ -116,10 +116,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
           </nav>
 
           {/* Footer */}
-          <div className="p-4 mt-auto border-t border-gray-200">
+          <div className="p-4 mt-auto border-t border-border">
             <Button
               variant="outline"
-              className="w-full justify-start text-gray-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50"
+              className="w-full justify-start text-muted-foreground hover:text-destructive hover:border-destructive/50 hover:bg-destructive/5"
               onClick={onLogout}
             >
               <LogOut className="w-5 h-5 mr-3" />
