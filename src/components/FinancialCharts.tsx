@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -9,6 +10,7 @@ interface Transaction {
   description: string;
   category: string;
   date: string;
+  status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
 }
 
 interface FinancialChartsProps {
@@ -18,6 +20,7 @@ interface FinancialChartsProps {
 
 const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detailed = false }) => {
   const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#06b6d4'];
+  const GRAY_COLORS = ['#9ca3af', '#6b7280']; // Cinza claro e escuro para não consolidados
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -26,55 +29,137 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
     }).format(value);
   };
 
-  // Dados para gráfico de pizza (receitas vs despesas)
+  // Separar transações por status
+  const getTransactionsByStatus = () => {
+    const consolidated = {
+      income: transactions.filter(t => 
+        t.type === 'income' && (!t.status || t.status === 'received')
+      ).reduce((sum, t) => sum + t.amount, 0),
+      expense: transactions.filter(t => 
+        t.type === 'expense' && (!t.status || t.status === 'paid')
+      ).reduce((sum, t) => sum + t.amount, 0)
+    };
+
+    const pending = {
+      income: transactions.filter(t => 
+        t.type === 'income' && t.status === 'unreceived'
+      ).reduce((sum, t) => sum + t.amount, 0),
+      expense: transactions.filter(t => 
+        t.type === 'expense' && t.status === 'unpaid'
+      ).reduce((sum, t) => sum + t.amount, 0)
+    };
+
+    return { consolidated, pending };
+  };
+
+  const { consolidated, pending } = getTransactionsByStatus();
+
+  // Dados para gráfico de pizza (incluindo pendentes)
   const pieData = [
     {
-      name: 'Receitas',
-      value: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+      name: 'Receitas Consolidadas',
+      value: consolidated.income,
       color: '#10b981'
     },
     {
-      name: 'Despesas',
-      value: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+      name: 'Receitas Pendentes',
+      value: pending.income,
+      color: '#9ca3af'
+    },
+    {
+      name: 'Despesas Consolidadas',
+      value: consolidated.expense,
       color: '#ef4444'
+    },
+    {
+      name: 'Despesas Pendentes',
+      value: pending.expense,
+      color: '#6b7280'
     }
   ].filter(item => item.value > 0);
 
-  // Dados por categoria
+  // Dados por categoria (separando consolidados e pendentes)
   const categoryData = React.useMemo(() => {
-    const categoryMap = new Map<string, { income: number; expense: number }>();
+    const categoryMap = new Map<string, { 
+      incomeConsolidated: number; 
+      incomePending: number;
+      expenseConsolidated: number; 
+      expensePending: number;
+    }>();
     
     transactions.forEach(transaction => {
-      const existing = categoryMap.get(transaction.category) || { income: 0, expense: 0 };
+      const existing = categoryMap.get(transaction.category) || { 
+        incomeConsolidated: 0, 
+        incomePending: 0,
+        expenseConsolidated: 0, 
+        expensePending: 0 
+      };
+      
+      const isConsolidated = !transaction.status || 
+        transaction.status === 'received' || 
+        transaction.status === 'paid';
+      
       if (transaction.type === 'income') {
-        existing.income += transaction.amount;
+        if (isConsolidated) {
+          existing.incomeConsolidated += transaction.amount;
+        } else {
+          existing.incomePending += transaction.amount;
+        }
       } else {
-        existing.expense += transaction.amount;
+        if (isConsolidated) {
+          existing.expenseConsolidated += transaction.amount;
+        } else {
+          existing.expensePending += transaction.amount;
+        }
       }
       categoryMap.set(transaction.category, existing);
     });
 
     return Array.from(categoryMap.entries()).map(([category, amounts]) => ({
       category,
-      receitas: amounts.income,
-      despesas: amounts.expense,
-      total: amounts.income - amounts.expense
+      'Receitas Consolidadas': amounts.incomeConsolidated,
+      'Receitas Pendentes': amounts.incomePending,
+      'Despesas Consolidadas': amounts.expenseConsolidated,
+      'Despesas Pendentes': amounts.expensePending,
     }));
   }, [transactions]);
 
-  // Dados mensais
+  // Dados mensais (incluindo pendentes)
   const monthlyData = React.useMemo(() => {
-    const monthMap = new Map<string, { income: number; expense: number }>();
+    const monthMap = new Map<string, { 
+      incomeConsolidated: number; 
+      incomePending: number;
+      expenseConsolidated: number; 
+      expensePending: number;
+    }>();
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
-      const existing = monthMap.get(monthKey) || { income: 0, expense: 0 };
+      const existing = monthMap.get(monthKey) || { 
+        incomeConsolidated: 0, 
+        incomePending: 0,
+        expenseConsolidated: 0, 
+        expensePending: 0 
+      };
+      
+      const isConsolidated = !transaction.status || 
+        transaction.status === 'received' || 
+        transaction.status === 'paid';
+      
       if (transaction.type === 'income') {
-        existing.income += transaction.amount;
+        if (isConsolidated) {
+          existing.incomeConsolidated += transaction.amount;
+        } else {
+          existing.incomePending += transaction.amount;
+        }
       } else {
-        existing.expense += transaction.amount;
+        if (isConsolidated) {
+          existing.expenseConsolidated += transaction.amount;
+        } else {
+          existing.expensePending += transaction.amount;
+        }
       }
       monthMap.set(monthKey, existing);
     });
@@ -82,9 +167,12 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
     return Array.from(monthMap.entries())
       .map(([month, amounts]) => ({
         month: new Date(month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
-        receitas: amounts.income,
-        despesas: amounts.expense,
-        saldo: amounts.income - amounts.expense
+        'Receitas Consolidadas': amounts.incomeConsolidated,
+        'Receitas Pendentes': amounts.incomePending,
+        'Despesas Consolidadas': amounts.expenseConsolidated,
+        'Despesas Pendentes': amounts.expensePending,
+        saldoConsolidado: amounts.incomeConsolidated - amounts.expenseConsolidated,
+        saldoTotal: (amounts.incomeConsolidated + amounts.incomePending) - (amounts.expenseConsolidated + amounts.expensePending)
       }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
       .slice(-6);
@@ -119,7 +207,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
         {/* Gráfico de Pizza */}
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Distribuição por Tipo</CardTitle>
+            <CardTitle>Distribuição por Tipo e Status</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -156,9 +244,11 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => formatCurrency(value)} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Line type="monotone" dataKey="receitas" stroke="#10b981" strokeWidth={2} />
-                <Line type="monotone" dataKey="despesas" stroke="#ef4444" strokeWidth={2} />
-                <Line type="monotone" dataKey="saldo" stroke="#3b82f6" strokeWidth={2} />
+                <Line type="monotone" dataKey="Receitas Consolidadas" stroke="#10b981" strokeWidth={2} />
+                <Line type="monotone" dataKey="Receitas Pendentes" stroke="#9ca3af" strokeWidth={2} strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="Despesas Consolidadas" stroke="#ef4444" strokeWidth={2} />
+                <Line type="monotone" dataKey="Despesas Pendentes" stroke="#6b7280" strokeWidth={2} strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="saldoConsolidado" stroke="#3b82f6" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -168,7 +258,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       {detailed && (
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Análise por Categoria</CardTitle>
+            <CardTitle>Análise por Categoria e Status</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
@@ -177,8 +267,10 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                 <XAxis dataKey="category" />
                 <YAxis tickFormatter={(value) => formatCurrency(value)} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Bar dataKey="receitas" fill="#10b981" />
-                <Bar dataKey="despesas" fill="#ef4444" />
+                <Bar dataKey="Receitas Consolidadas" fill="#10b981" />
+                <Bar dataKey="Receitas Pendentes" fill="#9ca3af" />
+                <Bar dataKey="Despesas Consolidadas" fill="#ef4444" />
+                <Bar dataKey="Despesas Pendentes" fill="#6b7280" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

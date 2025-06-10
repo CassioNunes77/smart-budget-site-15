@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff } from 'lucide-react';
+import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import AuthModal from '@/components/AuthModal';
 import TransactionModal from '@/components/TransactionModal';
@@ -21,6 +21,7 @@ interface Transaction {
   description: string;
   category: string;
   date: string;
+  status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
 }
 
 interface User {
@@ -41,15 +42,37 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showBalance, setShowBalance] = useState(true);
 
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  // Calcular totais separando por status
+  const getFinancialSummary = () => {
+    const consolidatedIncome = transactions
+      .filter(t => t.type === 'income' && (!t.status || t.status === 'received'))
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    const pendingIncome = transactions
+      .filter(t => t.type === 'income' && t.status === 'unreceived')
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const balance = totalIncome - totalExpenses;
+    const consolidatedExpenses = transactions
+      .filter(t => t.type === 'expense' && (!t.status || t.status === 'paid'))
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const pendingExpenses = transactions
+      .filter(t => t.type === 'expense' && t.status === 'unpaid')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      totalIncome: consolidatedIncome + pendingIncome,
+      consolidatedIncome,
+      pendingIncome,
+      totalExpenses: consolidatedExpenses + pendingExpenses,
+      consolidatedExpenses,
+      pendingExpenses,
+      consolidatedBalance: consolidatedIncome - consolidatedExpenses,
+      totalBalance: (consolidatedIncome + pendingIncome) - (consolidatedExpenses + pendingExpenses)
+    };
+  };
+
+  const financialSummary = getFinancialSummary();
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -148,32 +171,57 @@ const Index = () => {
             </div>
 
             {/* Cards de Resumo */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium opacity-90">Receitas</CardTitle>
+                  <CardTitle className="text-sm font-medium opacity-90">Receitas Consolidadas</CardTitle>
                   <TrendingUp className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(totalIncome)}</div>
-                  <p className="text-xs opacity-80 mt-1">Total de entradas</p>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedIncome)}</div>
+                  <p className="text-xs opacity-80 mt-1">Valores recebidos</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Receitas Pendentes</CardTitle>
+                  <Clock className="h-6 w-6 opacity-90" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingIncome)}</div>
+                  <p className="text-xs opacity-80 mt-1">A receber</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium opacity-90">Despesas</CardTitle>
+                  <CardTitle className="text-sm font-medium opacity-90">Despesas Pagas</CardTitle>
                   <TrendingDown className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(totalExpenses)}</div>
-                  <p className="text-xs opacity-80 mt-1">Total de saídas</p>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedExpenses)}</div>
+                  <p className="text-xs opacity-80 mt-1">Valores pagos</p>
                 </CardContent>
               </Card>
 
-              <Card className={`bg-gradient-to-br ${balance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200`}>
+              <Card className="bg-gradient-to-br from-red-400 to-red-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium opacity-90">Saldo</CardTitle>
+                  <CardTitle className="text-sm font-medium opacity-90">Despesas Pendentes</CardTitle>
+                  <Clock className="h-6 w-6 opacity-90" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingExpenses)}</div>
+                  <p className="text-xs opacity-80 mt-1">A pagar</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Cards de Saldo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className={`bg-gradient-to-br ${financialSummary.consolidatedBalance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200`}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Saldo Consolidado</CardTitle>
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-6 w-6 opacity-90" />
                     <Button
@@ -188,11 +236,22 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {showBalance ? formatCurrency(balance) : '••••••'}
+                    {showBalance ? formatCurrency(financialSummary.consolidatedBalance) : '••••••'}
                   </div>
-                  <p className="text-xs opacity-80 mt-1">
-                    {balance >= 0 ? 'Você está no positivo!' : 'Atenção ao saldo negativo'}
-                  </p>
+                  <p className="text-xs opacity-80 mt-1">Apenas valores confirmados</p>
+                </CardContent>
+              </Card>
+
+              <Card className={`bg-gradient-to-br ${financialSummary.totalBalance >= 0 ? 'from-purple-600 to-purple-700' : 'from-orange-600 to-orange-700'} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200`}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Saldo Projetado</CardTitle>
+                  <DollarSign className="h-6 w-6 opacity-90" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">
+                    {showBalance ? formatCurrency(financialSummary.totalBalance) : '••••••'}
+                  </div>
+                  <p className="text-xs opacity-80 mt-1">Incluindo valores pendentes</p>
                 </CardContent>
               </Card>
             </div>
@@ -271,23 +330,23 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Resumo Mensal</CardTitle>
+                  <CardTitle>Resumo Consolidado</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Total de Receitas:</span>
-                      <span className="font-semibold text-emerald-600">{formatCurrency(totalIncome)}</span>
+                      <span className="text-muted-foreground">Receitas Consolidadas:</span>
+                      <span className="font-semibold text-emerald-600">{formatCurrency(financialSummary.consolidatedIncome)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Total de Despesas:</span>
-                      <span className="font-semibold text-red-600">{formatCurrency(totalExpenses)}</span>
+                      <span className="text-muted-foreground">Despesas Consolidadas:</span>
+                      <span className="font-semibold text-red-600">{formatCurrency(financialSummary.consolidatedExpenses)}</span>
                     </div>
                     <hr />
                     <div className="flex justify-between items-center">
-                      <span className="text-foreground font-medium">Saldo Final:</span>
-                      <span className={`font-bold text-xl ${balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {formatCurrency(balance)}
+                      <span className="text-foreground font-medium">Saldo Consolidado:</span>
+                      <span className={`font-bold text-xl ${financialSummary.consolidatedBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {formatCurrency(financialSummary.consolidatedBalance)}
                       </span>
                     </div>
                   </div>
@@ -296,24 +355,23 @@ const Index = () => {
 
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Estatísticas</CardTitle>
+                  <CardTitle>Valores Pendentes</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Total de Transações:</span>
-                      <span className="font-semibold">{transactions.length}</span>
+                      <span className="text-muted-foreground">Receitas a Receber:</span>
+                      <span className="font-semibold text-emerald-400">{formatCurrency(financialSummary.pendingIncome)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Média por Transação:</span>
-                      <span className="font-semibold">
-                        {transactions.length > 0 ? formatCurrency((totalIncome + totalExpenses) / transactions.length) : 'R$ 0,00'}
-                      </span>
+                      <span className="text-muted-foreground">Despesas a Pagar:</span>
+                      <span className="font-semibold text-red-400">{formatCurrency(financialSummary.pendingExpenses)}</span>
                     </div>
+                    <hr />
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Categorias Utilizadas:</span>
-                      <span className="font-semibold">
-                        {new Set(transactions.map(t => t.category)).size}
+                      <span className="text-foreground font-medium">Saldo Projetado:</span>
+                      <span className={`font-bold text-xl ${financialSummary.totalBalance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
+                        {formatCurrency(financialSummary.totalBalance)}
                       </span>
                     </div>
                   </div>

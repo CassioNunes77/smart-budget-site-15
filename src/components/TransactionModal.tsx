@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { X, DollarSign, Calendar, Tag, FileText, CheckCircle } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -14,6 +15,7 @@ interface Transaction {
   description: string;
   category: string;
   date: string;
+  status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
 }
 
 interface TransactionModalProps {
@@ -49,6 +51,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isReceived, setIsReceived] = useState(true);
 
   useEffect(() => {
     if (editingTransaction) {
@@ -57,6 +60,16 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       setDescription(editingTransaction.description);
       setCategory(editingTransaction.category);
       setDate(editingTransaction.date);
+      
+      // Determinar status baseado no tipo e status atual
+      if (editingTransaction.status) {
+        setIsReceived(
+          editingTransaction.status === 'received' || 
+          editingTransaction.status === 'paid'
+        );
+      } else {
+        setIsReceived(true); // Default para transações existentes
+      }
     }
   }, [editingTransaction]);
 
@@ -68,12 +81,21 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       return;
     }
 
+    // Determinar status baseado no tipo e se foi recebido/pago
+    let status: 'paid' | 'unpaid' | 'received' | 'unreceived';
+    if (type === 'income') {
+      status = isReceived ? 'received' : 'unreceived';
+    } else {
+      status = isReceived ? 'paid' : 'unpaid';
+    }
+
     const transactionData = {
       type,
       amount: parseFloat(amount),
       description,
       category,
       date,
+      status,
     };
 
     if (editingTransaction) {
@@ -84,10 +106,16 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   };
 
   const formatAmountInput = (value: string) => {
-    // Remove tudo que não é número ou vírgula/ponto
     const numbers = value.replace(/[^\d.,]/g, '');
-    // Substitui vírgula por ponto para padronizar
     return numbers.replace(',', '.');
+  };
+
+  const getStatusText = () => {
+    if (type === 'income') {
+      return isReceived ? 'Recebido' : 'Não Recebido';
+    } else {
+      return isReceived ? 'Pago' : 'Não Pago';
+    }
   };
 
   return (
@@ -196,6 +224,29 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 onChange={(e) => setDate(e.target.value)}
                 required
               />
+            </div>
+
+            {/* Status de Pagamento/Recebimento */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                Status
+              </Label>
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <span className="font-medium">{getStatusText()}</span>
+                  <p className="text-sm text-muted-foreground">
+                    {type === 'income' 
+                      ? 'Marque se já recebeu este valor' 
+                      : 'Marque se já pagou esta despesa'
+                    }
+                  </p>
+                </div>
+                <Switch
+                  checked={isReceived}
+                  onCheckedChange={setIsReceived}
+                />
+              </div>
             </div>
 
             {/* Botões */}
