@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -140,8 +141,11 @@ const colorOptions = [
 ];
 
 const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateCategories, onCategoryDeleted }) => {
+  // Filtrar "Sem categoria" da lista para não exibir na tela
+  const editableCategories = categories.filter(cat => cat !== 'Sem categoria');
+  
   const [categoryList, setCategoryList] = useState<Category[]>(
-    categories.map((cat, index) => ({
+    editableCategories.map((cat, index) => ({
       id: `cat-${index}`,
       name: cat,
       icon: 'Tag',
@@ -158,8 +162,13 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateC
     const updatedCategories = categoryList.map(cat => 
       cat.id === category.id ? category : cat
     );
+    
     setCategoryList(updatedCategories);
-    onUpdateCategories(updatedCategories.map(cat => cat.name));
+    
+    // Reconstruir a lista completa de categorias, mantendo "Sem categoria"
+    const allCategories = ['Sem categoria', ...updatedCategories.map(cat => cat.name)];
+    onUpdateCategories(allCategories);
+    
     setEditingId(null);
     toast({
       title: "Categoria atualizada!",
@@ -169,29 +178,24 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateC
 
   const handleDeleteCategory = (id: string) => {
     const categoryToDelete = categoryList.find(cat => cat.id === id);
-    if (categoryToDelete && categoryToDelete.name === 'Sem categoria') {
-      toast({
-        title: "Categoria protegida",
-        description: "A categoria 'Sem categoria' não pode ser excluída.",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!categoryToDelete) return;
 
-    if (categoryToDelete) {
-      // Notificar que a categoria foi deletada para atualizar transações
-      if (onCategoryDeleted) {
-        onCategoryDeleted(categoryToDelete.name);
-      }
-      
-      const updatedCategories = categoryList.filter(cat => cat.id !== id);
-      setCategoryList(updatedCategories);
-      onUpdateCategories(updatedCategories.map(cat => cat.name));
-      toast({
-        title: "Categoria removida",
-        description: "A categoria foi excluída e todas as transações foram movidas para 'Sem categoria'.",
-      });
+    // Notificar que a categoria foi deletada para atualizar transações
+    if (onCategoryDeleted) {
+      onCategoryDeleted(categoryToDelete.name);
     }
+    
+    const updatedCategories = categoryList.filter(cat => cat.id !== id);
+    setCategoryList(updatedCategories);
+    
+    // Reconstruir a lista completa de categorias, mantendo "Sem categoria"
+    const allCategories = ['Sem categoria', ...updatedCategories.map(cat => cat.name)];
+    onUpdateCategories(allCategories);
+    
+    toast({
+      title: "Categoria removida",
+      description: "A categoria foi excluída e todas as transações foram movidas para 'Sem categoria'.",
+    });
   };
 
   const handleAddCategory = () => {
@@ -202,13 +206,19 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateC
         icon: newCategoryIcon,
         color: newCategoryColor
       };
+      
       const updatedCategories = [...categoryList, newCategory];
       setCategoryList(updatedCategories);
-      onUpdateCategories(updatedCategories.map(cat => cat.name));
+      
+      // Reconstruir a lista completa de categorias, mantendo "Sem categoria"
+      const allCategories = ['Sem categoria', ...updatedCategories.map(cat => cat.name)];
+      onUpdateCategories(allCategories);
+      
       setNewCategoryName('');
       setNewCategoryIcon('Tag');
       setNewCategoryColor(colorOptions[0]);
       setShowNewCategory(false);
+      
       toast({
         title: "Categoria adicionada!",
         description: "Nova categoria criada com sucesso.",

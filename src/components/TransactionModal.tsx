@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,9 +105,26 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     ? categories 
     : ['Sem categoria', ...categories];
 
+  // Função para determinar se está pago/recebido ou não
+  const getStatusBoolean = () => {
+    if (type === 'expense') {
+      return status === 'paid';
+    } else {
+      return status === 'received';
+    }
+  };
+
+  const handleStatusChange = (checked: boolean) => {
+    if (type === 'expense') {
+      setStatus(checked ? 'paid' : 'unpaid');
+    } else {
+      setStatus(checked ? 'received' : 'unreceived');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md bg-background">
+      <Card className="w-full max-w-md bg-background max-h-[calc(100vh-2rem)] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>
             {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
@@ -199,27 +217,23 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               />
             </div>
 
-            {/* Status */}
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(value: 'paid' | 'unpaid' | 'received' | 'unreceived') => setStatus(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {type === 'expense' ? (
-                    <>
-                      <SelectItem value="paid">Pago</SelectItem>
-                      <SelectItem value="unpaid">Não Pago</SelectItem>
-                    </>
-                  ) : (
-                    <>
-                      <SelectItem value="received">Recebido</SelectItem>
-                      <SelectItem value="unreceived">Não Recebido</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
+            {/* Status como Switch */}
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <Label className="text-sm font-medium">
+                  {type === 'expense' ? 'Pago' : 'Recebido'}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {type === 'expense' 
+                    ? 'Marque se a despesa já foi paga' 
+                    : 'Marque se a receita já foi recebida'
+                  }
+                </p>
+              </div>
+              <Switch
+                checked={getStatusBoolean()}
+                onCheckedChange={handleStatusChange}
+              />
             </div>
 
             {/* Transação Recorrente */}
