@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -21,6 +20,7 @@ interface SidebarProps {
   onPageChange: (page: string) => void;
   onLogout: () => void;
   userName: string;
+  onShowPremiumModal: () => void;
 }
 
 const menuItems = [
@@ -61,7 +61,7 @@ const menuItems = [
   }
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, userName }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, userName, onShowPremiumModal }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handlePageChange = (page: string) => {
@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-sidebar-foreground">Fluxo Fácil</h1>
-                  <p className="text-xs text-sidebar-foreground/60">v0.1.3</p>
+                  <p className="text-xs text-sidebar-foreground/60">v0.1.5</p>
                 </div>
               </div>
               <Button
@@ -162,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
               <p className="text-xs text-sidebar-foreground/70 mb-3">
                 Desbloqueie recursos avançados
               </p>
-              <Button size="sm" className="w-full premium-button text-xs">
+              <Button size="sm" className="w-full premium-button text-xs" onClick={onShowPremiumModal}>
                 Atualizar
               </Button>
             </div>
