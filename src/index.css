@@ -47,41 +47,41 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 240 6% 10%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 240 6% 13%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 240 6% 13%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 240 4% 16%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 240 4% 16%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 240 4% 16%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
     --ring: 224.3 76.3% 48%;
     
-    --sidebar-background: 240 5.9% 10%;
+    --sidebar-background: 240 6% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent: 240 4% 16%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-border: 240 4% 18%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -94,6 +94,46 @@
   body {
     @apply bg-background text-foreground transition-colors duration-300;
     font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .glassmorphism {
+    @apply bg-card/95 backdrop-blur-md;
+  }
+  
+  /* Better touch targets for mobile */
+  button {
+    @apply min-h-[44px];
+  }
+  
+  /* Improved spacing for mobile */
+  .card-mobile {
+    @apply p-3;
+  }
+  
+  /* Better text sizing for mobile */
+  .mobile-text {
+    @apply text-base leading-relaxed;
+  }
+}
+
+/* iOS specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific styles */
+  input[type="number"] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+  }
+  
+  input[type="date"] {
+    -webkit-appearance: none;
+  }
+  
+  /* Better scrolling for iOS */
+  .overflow-scroll {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -150,4 +190,9 @@
 
 .dark .shadow-lg {
   @apply shadow-2xl shadow-black/20;
+}
+
+/* Premium button styling */
+.premium-button {
+  @apply bg-gradient-to-r from-yellow-500 via-yellow-600 to-yellow-500 hover:from-yellow-600 hover:via-yellow-700 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
 }

@@ -1,8 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Edit, Trash2, TrendingUp, TrendingDown, Filter, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -11,19 +15,29 @@ interface Transaction {
   description: string;
   category: string;
   date: string;
+  status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
 }
 
 interface TransactionsListProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
+  onUpdateStatus?: (id: string, status: 'paid' | 'unpaid' | 'received' | 'unreceived') => void;
+  showFilters?: boolean;
 }
 
 const TransactionsList: React.FC<TransactionsListProps> = ({ 
   transactions, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onUpdateStatus,
+  showFilters = false
 }) => {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [periodFilter, setPeriodFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -37,100 +51,269 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
-      'Alimentação': 'bg-orange-100 text-orange-800',
-      'Transporte': 'bg-blue-100 text-blue-800',
-      'Moradia': 'bg-purple-100 text-purple-800',
-      'Saúde': 'bg-red-100 text-red-800',
-      'Educação': 'bg-indigo-100 text-indigo-800',
-      'Entretenimento': 'bg-pink-100 text-pink-800',
-      'Roupas': 'bg-yellow-100 text-yellow-800',
-      'Tecnologia': 'bg-gray-100 text-gray-800',
-      'Viagem': 'bg-green-100 text-green-800',
-      'Investimentos': 'bg-emerald-100 text-emerald-800',
-      'Salário': 'bg-teal-100 text-teal-800',
-      'Freelance': 'bg-cyan-100 text-cyan-800',
-      'Vendas': 'bg-lime-100 text-lime-800'
+      'Alimentação': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+      'Transporte': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'Moradia': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'Saúde': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'Educação': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+      'Entretenimento': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+      'Roupas': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Tecnologia': 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300',
+      'Viagem': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Investimentos': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+      'Salário': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
+      'Freelance': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+      'Vendas': 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-300'
     };
-    return colors[category] || 'bg-slate-100 text-slate-800';
+    return colors[category] || 'bg-slate-100 text-slate-800 dark:bg-slate-800/30 dark:text-slate-300';
   };
+
+  const getStatusColor = (transaction: Transaction) => {
+    if (!transaction.status) return 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300';
+    
+    const isPositiveStatus = transaction.status === 'paid' || transaction.status === 'received';
+    return isPositiveStatus 
+      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+  };
+
+  const getStatusText = (transaction: Transaction) => {
+    if (!transaction.status) return 'Confirmado';
+    
+    const statusMap = {
+      'paid': 'Pago',
+      'unpaid': 'Não Pago',
+      'received': 'Recebido',
+      'unreceived': 'Não Recebido'
+    };
+    return statusMap[transaction.status];
+  };
+
+  const getStatusIcon = (transaction: Transaction) => {
+    if (!transaction.status) return <CheckCircle className="w-3 h-3" />;
+    
+    const isPositiveStatus = transaction.status === 'paid' || transaction.status === 'received';
+    return isPositiveStatus 
+      ? <CheckCircle className="w-3 h-3" />
+      : <Clock className="w-3 h-3" />;
+  };
+
+  const toggleStatus = (transaction: Transaction) => {
+    if (!onUpdateStatus) return;
+    
+    let newStatus: 'paid' | 'unpaid' | 'received' | 'unreceived';
+    
+    if (transaction.type === 'income') {
+      newStatus = transaction.status === 'received' ? 'unreceived' : 'received';
+    } else {
+      newStatus = transaction.status === 'paid' ? 'unpaid' : 'paid';
+    }
+    
+    onUpdateStatus(transaction.id, newStatus);
+  };
+
+  const filterTransactions = () => {
+    let filtered = [...transactions];
+
+    // Filtro por status
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'confirmed') {
+        filtered = filtered.filter(t => !t.status || t.status === 'paid' || t.status === 'received');
+      } else if (statusFilter === 'pending') {
+        filtered = filtered.filter(t => t.status === 'unpaid' || t.status === 'unreceived');
+      }
+    }
+
+    // Filtro por período
+    if (periodFilter !== 'all') {
+      const now = new Date();
+      let startDate = new Date();
+      
+      switch (periodFilter) {
+        case 'week':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+        case 'custom':
+          if (startDate && endDate) {
+            filtered = filtered.filter(t => {
+              const transactionDate = new Date(t.date);
+              return transactionDate >= new Date(startDate) && transactionDate <= new Date(endDate);
+            });
+          }
+          break;
+      }
+      
+      if (periodFilter !== 'custom') {
+        filtered = filtered.filter(t => new Date(t.date) >= startDate);
+      }
+    }
+
+    return filtered;
+  };
+
+  const filteredTransactions = filterTransactions();
 
   if (transactions.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-muted-foreground">
         <p>Nenhuma transação encontrada</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {transactions.map((transaction) => (
-        <div
-          key={transaction.id}
-          className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
-        >
-          <div className="flex items-center space-x-4 flex-1">
-            <div className={`p-2 rounded-full ${
-              transaction.type === 'income' 
-                ? 'bg-emerald-100 text-emerald-600' 
-                : 'bg-red-100 text-red-600'
-            }`}>
-              {transaction.type === 'income' ? (
-                <TrendingUp className="w-5 h-5" />
-              ) : (
-                <TrendingDown className="w-5 h-5" />
+    <div className="space-y-4">
+      {showFilters && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="confirmed">Confirmados</SelectItem>
+                    <SelectItem value="pending">Pendentes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Período</Label>
+                <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="week">Última semana</SelectItem>
+                    <SelectItem value="month">Último mês</SelectItem>
+                    <SelectItem value="quarter">Últimos 3 meses</SelectItem>
+                    <SelectItem value="year">Último ano</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {periodFilter === 'custom' && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Data Inicial</Label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data Final</Label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
             </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-medium text-gray-900 truncate">
-                  {transaction.description}
-                </h3>
-                <Badge className={`text-xs ${getCategoryColor(transaction.category)}`}>
-                  {transaction.category}
-                </Badge>
-              </div>
-              <p className="text-sm text-gray-500">
-                {formatDate(transaction.date)}
-              </p>
-            </div>
-            
-            <div className="text-right">
-              <p className={`font-semibold text-lg ${
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-3">
+        {filteredTransactions.map((transaction) => (
+          <div
+            key={transaction.id}
+            className="flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:border-border/60 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-center space-x-4 flex-1">
+              <div className={`p-2 rounded-full ${
                 transaction.type === 'income' 
-                  ? 'text-emerald-600' 
-                  : 'text-red-600'
+                  ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                  : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
               }`}>
-                {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-              </p>
+                {transaction.type === 'income' ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : (
+                  <TrendingDown className="w-5 h-5" />
+                )}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="font-medium text-foreground truncate">
+                    {transaction.description}
+                  </h3>
+                  <Badge className={`text-xs ${getCategoryColor(transaction.category)}`}>
+                    {transaction.category}
+                  </Badge>
+                  <Badge 
+                    className={`text-xs cursor-pointer transition-colors ${getStatusColor(transaction)}`}
+                    onClick={() => toggleStatus(transaction)}
+                  >
+                    {getStatusIcon(transaction)}
+                    <span className="ml-1">{getStatusText(transaction)}</span>
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(transaction.date)}
+                </p>
+              </div>
+              
+              <div className="text-right">
+                <p className={`font-semibold text-lg ${
+                  transaction.type === 'income' 
+                    ? 'text-emerald-600 dark:text-emerald-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2 ml-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(transaction)}
+                className="text-primary hover:text-primary/80 hover:bg-primary/10"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+                    onDelete(transaction.id);
+                  }
+                }}
+                className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2 ml-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(transaction)}
-              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-                  onDelete(transaction.id);
-                }
-              }}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,6 +51,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isReceived, setIsReceived] = useState(true);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'weekly' | 'yearly'>('monthly');
 
   useEffect(() => {
     if (editingTransaction) {
@@ -96,6 +97,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       category,
       date,
       status,
+      isRecurring,
+      recurringFrequency: isRecurring ? recurringFrequency : undefined,
     };
 
     if (editingTransaction) {
@@ -120,8 +123,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-lg shadow-2xl animate-scale-in">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in">
+        <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-card border-b">
           <CardTitle className="text-xl">
             {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
           </CardTitle>
@@ -130,7 +133,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
           </Button>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Tipo de Transação */}
             <div className="space-y-3">
@@ -247,6 +250,42 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                   onCheckedChange={setIsReceived}
                 />
               </div>
+            </div>
+
+            {/* Transação Recorrente */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Transação Recorrente
+              </Label>
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <span className="font-medium">Repetir mensalmente</span>
+                  <p className="text-sm text-muted-foreground">
+                    Cria automaticamente a próxima transação
+                  </p>
+                </div>
+                <Switch
+                  checked={isRecurring}
+                  onCheckedChange={setIsRecurring}
+                />
+              </div>
+              
+              {isRecurring && (
+                <div className="ml-4 space-y-2">
+                  <Label>Frequência</Label>
+                  <Select value={recurringFrequency} onValueChange={(value: 'monthly' | 'weekly' | 'yearly') => setRecurringFrequency(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="yearly">Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Botões */}

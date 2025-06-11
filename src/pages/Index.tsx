@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock } from 'lucide-react';
+import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock, Crown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import AuthModal from '@/components/AuthModal';
 import TransactionModal from '@/components/TransactionModal';
@@ -79,7 +78,7 @@ const Index = () => {
     setShowAuthModal(false);
     toast({
       title: "Login realizado com sucesso!",
-      description: `Bem-vindo, ${userData.name}!`,
+      description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
     });
   };
 
@@ -90,6 +89,22 @@ const Index = () => {
     toast({
       title: "Logout realizado",
       description: "Até logo!",
+    });
+  };
+
+  const handleUpdateUser = (userData: { name: string; email: string }) => {
+    if (user) {
+      setUser({ ...user, ...userData });
+    }
+  };
+
+  const handleUpdateTransactionStatus = (id: string, status: 'paid' | 'unpaid' | 'received' | 'unreceived') => {
+    setTransactions(transactions.map(t => 
+      t.id === id ? { ...t, status } : t
+    ));
+    toast({
+      title: "Status atualizado!",
+      description: "O status da transação foi alterado.",
     });
   };
 
@@ -155,19 +170,26 @@ const Index = () => {
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                   {getGreeting()}, {user?.name}! 👋
                 </h1>
                 <p className="text-muted-foreground mt-1">Aqui está um resumo das suas finanças</p>
               </div>
-              <Button 
-                onClick={() => setShowTransactionModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
-                size="lg"
-              >
-                <PlusCircle className="w-5 h-5 mr-2" />
-                Nova Transação
-              </Button>
+              <div className="flex gap-2">
+                <Button className="premium-button" size="sm">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Premium
+                </Button>
+                <Button 
+                  onClick={() => setShowTransactionModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
+                  size="lg"
+                >
+                  <PlusCircle className="w-5 h-5 mr-2" />
+                  <span className="hidden sm:inline">Nova Transação</span>
+                  <span className="sm:hidden">Nova</span>
+                </Button>
+              </div>
             </div>
 
             {/* Cards de Resumo */}
@@ -269,6 +291,7 @@ const Index = () => {
                   transactions={transactions.slice(0, 5)}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
+                  onUpdateStatus={handleUpdateTransactionStatus}
                 />
                 {transactions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
@@ -287,7 +310,7 @@ const Index = () => {
           <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Transações</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">Transações</h1>
                 <p className="text-muted-foreground mt-1">Gerencie todas as suas movimentações financeiras</p>
               </div>
               <Button 
@@ -309,6 +332,8 @@ const Index = () => {
                   transactions={transactions}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
+                  onUpdateStatus={handleUpdateTransactionStatus}
+                  showFilters={true}
                 />
               </CardContent>
             </Card>
@@ -319,7 +344,7 @@ const Index = () => {
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Relatórios</h1>
               <p className="text-muted-foreground mt-1">Análise detalhada das suas finanças</p>
             </div>
 
@@ -381,6 +406,12 @@ const Index = () => {
           </div>
         );
 
+      case 'profile':
+        return <UserProfile user={user} onUpdateUser={handleUpdateUser} />;
+
+      case 'categories':
+        return <CategoryManager categories={categories} onUpdateCategories={() => {}} />;
+
       case 'settings':
         return <Settings user={user} />;
 
@@ -391,7 +422,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
-      <div className="flex">
+      <div className="flex w-full">
         <Sidebar 
           currentPage={currentPage} 
           onPageChange={setCurrentPage} 
@@ -399,7 +430,7 @@ const Index = () => {
           userName={user?.name || 'Usuário'}
         />
         
-        <main className="flex-1 ml-0 lg:ml-64 p-4 lg:p-8">
+        <main className="flex-1 ml-0 lg:ml-64 p-3 md:p-4 lg:p-8">
           {renderContent()}
         </main>
       </div>
