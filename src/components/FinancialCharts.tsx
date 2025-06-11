@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -124,7 +123,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
     }));
   }, [transactions]);
 
-  // Dados mensais (incluindo pendentes)
+  // Dados mensais (incluindo pendentes) - com ordenação correta
   const monthlyData = React.useMemo(() => {
     const monthMap = new Map<string, { 
       incomeConsolidated: number; 
@@ -166,7 +165,8 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
     return Array.from(monthMap.entries())
       .map(([month, amounts]) => ({
-        month: new Date(month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+        month,
+        monthDisplay: new Date(month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
         'Receitas Consolidadas': amounts.incomeConsolidated,
         'Receitas Pendentes': amounts.incomePending,
         'Despesas Consolidadas': amounts.expenseConsolidated,
@@ -174,7 +174,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
         saldoConsolidado: amounts.incomeConsolidated - amounts.expenseConsolidated,
         saldoTotal: (amounts.incomeConsolidated + amounts.incomePending) - (amounts.expenseConsolidated + amounts.expensePending)
       }))
-      .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
+      .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
       .slice(-6);
   }, [transactions]);
 
@@ -241,7 +241,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis dataKey="monthDisplay" />
                 <YAxis tickFormatter={(value) => formatCurrency(value)} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Line type="monotone" dataKey="Receitas Consolidadas" stroke="#10b981" strokeWidth={2} />

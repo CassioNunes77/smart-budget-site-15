@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -11,7 +12,8 @@ import {
   DollarSign,
   User,
   Tag,
-  Crown
+  Crown,
+  Bell
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,6 +38,11 @@ const menuItems = [
     title: 'Relatórios',
     icon: BarChart3,
     id: 'reports'
+  },
+  {
+    title: 'Notificações',
+    icon: Bell,
+    id: 'notifications'
   },
   {
     title: 'Perfil',
@@ -138,6 +145,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.title}</span>
+                {item.id === 'notifications' && (
+                  <span className="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
               </Button>
             ))}
           </nav>

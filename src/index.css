@@ -47,41 +47,41 @@
   }
 
   .dark {
-    --background: 240 6% 10%;
+    --background: 240 6% 15%;
     --foreground: 210 40% 98%;
 
-    --card: 240 6% 13%;
+    --card: 240 6% 18%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 240 6% 13%;
+    --popover: 240 6% 18%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 240 4% 16%;
+    --secondary: 240 4% 21%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 4% 16%;
+    --muted: 240 4% 21%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 240 4% 16%;
+    --accent: 240 4% 21%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 240 4% 18%;
-    --input: 240 4% 18%;
+    --border: 240 4% 23%;
+    --input: 240 4% 23%;
     --ring: 224.3 76.3% 48%;
     
-    --sidebar-background: 240 6% 10%;
+    --sidebar-background: 240 6% 15%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent: 240 4% 21%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 4% 18%;
+    --sidebar-border: 240 4% 23%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -195,4 +195,9 @@
 /* Premium button styling */
 .premium-button {
   @apply bg-gradient-to-r from-yellow-500 via-yellow-600 to-yellow-500 hover:from-yellow-600 hover:via-yellow-700 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
+}
+
+/* Padronização de altura dos botões */
+.standard-button-height {
+  @apply h-11;
 }

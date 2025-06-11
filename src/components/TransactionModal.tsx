@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,29 +22,14 @@ interface TransactionModalProps {
   onClose: () => void;
   onSave: (transaction: Transaction | Omit<Transaction, 'id'>) => void;
   editingTransaction?: Transaction | null;
+  categories?: string[];
 }
-
-const categories = [
-  'Alimentação',
-  'Transporte',
-  'Moradia',
-  'Saúde',
-  'Educação',
-  'Entretenimento',
-  'Roupas',
-  'Tecnologia',
-  'Viagem',
-  'Investimentos',
-  'Salário',
-  'Freelance',
-  'Vendas',
-  'Outros'
-];
 
 const TransactionModal: React.FC<TransactionModalProps> = ({ 
   onClose, 
   onSave, 
-  editingTransaction 
+  editingTransaction,
+  categories = []
 }) => {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -53,6 +39,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [isReceived, setIsReceived] = useState(true);
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'weekly' | 'yearly'>('monthly');
+  const [recurringEndDate, setRecurringEndDate] = useState('');
 
   useEffect(() => {
     if (editingTransaction) {
@@ -62,14 +49,13 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       setCategory(editingTransaction.category);
       setDate(editingTransaction.date);
       
-      // Determinar status baseado no tipo e status atual
       if (editingTransaction.status) {
         setIsReceived(
           editingTransaction.status === 'received' || 
           editingTransaction.status === 'paid'
         );
       } else {
-        setIsReceived(true); // Default para transações existentes
+        setIsReceived(true);
       }
     }
   }, [editingTransaction]);
@@ -82,7 +68,11 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       return;
     }
 
-    // Determinar status baseado no tipo e se foi recebido/pago
+    if (isRecurring && !recurringEndDate) {
+      alert('Por favor, selecione a data final para transações recorrentes.');
+      return;
+    }
+
     let status: 'paid' | 'unpaid' | 'received' | 'unreceived';
     if (type === 'income') {
       status = isReceived ? 'received' : 'unreceived';
@@ -99,6 +89,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       status,
       isRecurring,
       recurringFrequency: isRecurring ? recurringFrequency : undefined,
+      recurringEndDate: isRecurring ? recurringEndDate : undefined,
     };
 
     if (editingTransaction) {
@@ -142,7 +133,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 <Button
                   type="button"
                   variant={type === 'income' ? 'default' : 'outline'}
-                  className={`flex-1 ${type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                  className={`flex-1 h-11 ${type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
                   onClick={() => setType('income')}
                 >
                   <DollarSign className="w-4 h-4 mr-2" />
@@ -151,7 +142,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 <Button
                   type="button"
                   variant={type === 'expense' ? 'default' : 'outline'}
-                  className={`flex-1 ${type === 'expense' ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                  className={`flex-1 h-11 ${type === 'expense' ? 'bg-red-600 hover:bg-red-700' : ''}`}
                   onClick={() => setType('expense')}
                 >
                   <DollarSign className="w-4 h-4 mr-2" />
@@ -260,9 +251,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               </Label>
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
-                  <span className="font-medium">Repetir mensalmente</span>
+                  <span className="font-medium">Repetir automaticamente</span>
                   <p className="text-sm text-muted-foreground">
-                    Cria automaticamente a próxima transação
+                    Cria automaticamente as próximas transações
                   </p>
                 </div>
                 <Switch
@@ -272,18 +263,31 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               </div>
               
               {isRecurring && (
-                <div className="ml-4 space-y-2">
-                  <Label>Frequência</Label>
-                  <Select value={recurringFrequency} onValueChange={(value: 'monthly' | 'weekly' | 'yearly') => setRecurringFrequency(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="weekly">Semanal</SelectItem>
-                      <SelectItem value="monthly">Mensal</SelectItem>
-                      <SelectItem value="yearly">Anual</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="ml-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Frequência</Label>
+                    <Select value={recurringFrequency} onValueChange={(value: 'monthly' | 'weekly' | 'yearly') => setRecurringFrequency(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Semanal</SelectItem>
+                        <SelectItem value="monthly">Mensal</SelectItem>
+                        <SelectItem value="yearly">Anual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="recurringEndDate">Data Final *</Label>
+                    <Input
+                      id="recurringEndDate"
+                      type="month"
+                      value={recurringEndDate}
+                      onChange={(e) => setRecurringEndDate(e.target.value)}
+                      required={isRecurring}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -294,13 +298,13 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1"
+                className="flex-1 h-11"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className={`flex-1 ${
+                className={`flex-1 h-11 ${
                   type === 'income' 
                     ? 'bg-emerald-600 hover:bg-emerald-700' 
                     : 'bg-red-600 hover:bg-red-700'

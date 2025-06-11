@@ -12,6 +12,7 @@ import DownloadManager from '@/components/DownloadManager';
 import Settings from '@/components/Settings';
 import UserProfile from '@/components/UserProfile';
 import CategoryManager from '@/components/CategoryManager';
+import PremiumModal from '@/components/PremiumModal';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -23,6 +24,9 @@ interface Transaction {
   category: string;
   date: string;
   status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
+  isRecurring?: boolean;
+  recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
+  recurringEndDate?: string;
 }
 
 interface User {
@@ -48,6 +52,7 @@ const Index = () => {
   ]);
   const [showAuthModal, setShowAuthModal] = useState(!user);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showBalance, setShowBalance] = useState(true);
@@ -119,17 +124,55 @@ const Index = () => {
     });
   };
 
+  const createRecurringTransactions = (baseTransaction: Omit<Transaction, 'id'>, endDate: string) => {
+    const transactions: Transaction[] = [];
+    const startDate = new Date(baseTransaction.date);
+    const finalDate = new Date(endDate + '-01');
+    
+    let currentDate = new Date(startDate);
+    
+    while (currentDate <= finalDate) {
+      const newTransaction: Transaction = {
+        ...baseTransaction,
+        id: `${Date.now()}-${Math.random()}`,
+        date: currentDate.toISOString().split('T')[0],
+      };
+      
+      transactions.push(newTransaction);
+      
+      // Increment based on frequency
+      if (baseTransaction.recurringFrequency === 'monthly') {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      } else if (baseTransaction.recurringFrequency === 'weekly') {
+        currentDate.setDate(currentDate.getDate() + 7);
+      } else if (baseTransaction.recurringFrequency === 'yearly') {
+        currentDate.setFullYear(currentDate.getFullYear() + 1);
+      }
+    }
+    
+    return transactions;
+  };
+
   const handleAddTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction = {
-      ...transaction,
-      id: Date.now().toString(),
-    };
-    setTransactions([newTransaction, ...transactions]);
+    if (transaction.isRecurring && transaction.recurringEndDate) {
+      const recurringTransactions = createRecurringTransactions(transaction, transaction.recurringEndDate);
+      setTransactions([...recurringTransactions, ...transactions]);
+      toast({
+        title: "Transações recorrentes criadas!",
+        description: `${recurringTransactions.length} transações foram adicionadas.`,
+      });
+    } else {
+      const newTransaction = {
+        ...transaction,
+        id: Date.now().toString(),
+      };
+      setTransactions([newTransaction, ...transactions]);
+      toast({
+        title: "Transação adicionada!",
+        description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de R$ ${transaction.amount.toFixed(2)} registrada.`,
+      });
+    }
     setShowTransactionModal(false);
-    toast({
-      title: "Transação adicionada!",
-      description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de R$ ${transaction.amount.toFixed(2)} registrada.`,
-    });
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
@@ -191,13 +234,17 @@ const Index = () => {
                 <p className="text-muted-foreground mt-1">Aqui está um resumo das suas finanças</p>
               </div>
               <div className="flex gap-2">
-                <Button className="premium-button" size="sm">
+                <Button 
+                  className="premium-button standard-button-height" 
+                  size="sm"
+                  onClick={() => setShowPremiumModal(true)}
+                >
                   <Crown className="w-4 h-4 mr-2" />
                   Premium
                 </Button>
                 <Button 
                   onClick={() => setShowTransactionModal(true)}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200 standard-button-height"
                   size="lg"
                 >
                   <PlusCircle className="w-5 h-5 mr-2" />
@@ -430,6 +477,35 @@ const Index = () => {
       case 'settings':
         return <Settings user={user} />;
 
+      case 'notifications':
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Notificações</h1>
+              <p className="text-muted-foreground mt-1">Acompanhe suas atualizações e lembretes</p>
+            </div>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Central de Notificações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Crown className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg">Funcionalidade Premium</p>
+                  <p className="text-sm">Assine o plano Premium para receber notificações personalizadas!</p>
+                  <Button 
+                    className="mt-4 premium-button"
+                    onClick={() => setShowPremiumModal(true)}
+                  >
+                    Conhecer Premium
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       default:
         return <div>Página não encontrada</div>;
     }
@@ -459,10 +535,17 @@ const Index = () => {
           }}
           onSave={editingTransaction ? handleEditTransaction : handleAddTransaction}
           editingTransaction={editingTransaction}
+          categories={categories}
         />
+      )}
+      
+      {showPremiumModal && (
+        <PremiumModal onClose={() => setShowPremiumModal(false)} />
       )}
     </div>
   );
 };
 
 export default Index;
+
+}
