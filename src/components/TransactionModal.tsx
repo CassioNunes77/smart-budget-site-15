@@ -41,6 +41,11 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'weekly' | 'yearly'>('monthly');
   const [recurringEndDate, setRecurringEndDate] = useState('');
 
+  // Adicionar "Sem categoria" às categorias se não existir
+  const categoriesWithDefault = categories.includes('Sem categoria') 
+    ? categories 
+    : ['Sem categoria', ...categories];
+
   useEffect(() => {
     if (editingTransaction) {
       setType(editingTransaction.type);
@@ -63,7 +68,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || !description || !category) {
+    if (!amount || !description) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
@@ -84,7 +89,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       type,
       amount: parseFloat(amount),
       description,
-      category,
+      category: category || 'Sem categoria', // Define automaticamente se não escolhido
       date,
       status,
       isRecurring,
@@ -189,14 +194,14 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Tag className="w-4 h-4" />
-                Categoria *
+                Categoria
               </Label>
-              <Select value={category} onValueChange={setCategory} required>
+              <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
+                  <SelectValue placeholder="Selecione uma categoria (padrão: Sem categoria)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
+                  {categoriesWithDefault.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
@@ -286,6 +291,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                       value={recurringEndDate}
                       onChange={(e) => setRecurringEndDate(e.target.value)}
                       required={isRecurring}
+                      className="w-full"
                     />
                   </div>
                 </div>

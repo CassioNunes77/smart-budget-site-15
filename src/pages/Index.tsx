@@ -469,7 +469,7 @@ const Index = () => {
         );
 
       case 'profile':
-        return <UserProfile user={user} onUpdateUser={handleUpdateUser} />;
+        return <UserProfile user={user} onUpdateUser={handleUpdateUser} onShowPremiumModal={() => setShowPremiumModal(true)} />;
 
       case 'categories':
         return <CategoryManager categories={categories} onUpdateCategories={handleUpdateCategories} />;
@@ -490,16 +490,30 @@ const Index = () => {
                 <CardTitle>Central de Notificações</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Crown className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">Funcionalidade Premium</p>
-                  <p className="text-sm">Assine o plano Premium para receber notificações personalizadas!</p>
-                  <Button 
-                    className="mt-4 premium-button"
-                    onClick={() => setShowPremiumModal(true)}
-                  >
-                    Conhecer Premium
-                  </Button>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <span className="font-medium">Lembretes de contas a pagar</span>
+                      <p className="text-sm text-muted-foreground">
+                        Receba notificações sobre despesas pendentes
+                      </p>
+                    </div>
+                    <div className="w-10 h-6 bg-primary rounded-full flex items-center">
+                      <div className="w-4 h-4 bg-white rounded-full ml-5 shadow-sm"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Crown className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">Mais funcionalidades Premium</p>
+                    <p className="text-sm">Assine o plano Premium para receber notificações personalizadas!</p>
+                    <Button 
+                      className="mt-4 premium-button"
+                      onClick={() => setShowPremiumModal(true)}
+                    >
+                      Conhecer Premium
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -519,6 +533,7 @@ const Index = () => {
           onPageChange={setCurrentPage} 
           onLogout={handleLogout}
           userName={user?.name || 'Usuário'}
+          onShowPremiumModal={() => setShowPremiumModal(true)}
         />
         
         <main className="flex-1 ml-0 lg:ml-64 p-3 md:p-4 lg:p-8">
@@ -547,3 +562,5 @@ const Index = () => {
 };
 
 export default Index;
+
+}

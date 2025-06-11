@@ -21,9 +21,10 @@ import { toast } from '@/hooks/use-toast';
 interface UserProfileProps {
   user: { id: string; name: string; email: string } | null;
   onUpdateUser: (userData: { name: string; email: string }) => void;
+  onShowPremiumModal?: () => void;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser, onShowPremiumModal }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
@@ -140,7 +141,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser }) => {
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                   placeholder="seu@email.com"
+                  disabled
+                  className="opacity-50 cursor-not-allowed"
                 />
+                <p className="text-xs text-muted-foreground">
+                  O e-mail não pode ser alterado por questões de segurança
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="gap-2">
@@ -199,7 +205,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser }) => {
                 <span>Suporte prioritário</span>
               </li>
             </ul>
-            <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+            <Button 
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              onClick={onShowPremiumModal}
+            >
               <Crown className="w-4 h-4 mr-2" />
               Atualizar para Premium
             </Button>
