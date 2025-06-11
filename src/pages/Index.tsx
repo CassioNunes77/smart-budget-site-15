@@ -10,6 +10,8 @@ import FinancialCharts from '@/components/FinancialCharts';
 import Sidebar from '@/components/Sidebar';
 import DownloadManager from '@/components/DownloadManager';
 import Settings from '@/components/Settings';
+import UserProfile from '@/components/UserProfile';
+import CategoryManager from '@/components/CategoryManager';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -35,6 +37,15 @@ const Index = () => {
   
   const [user, setUser] = useLocalStorage<User | null>('financial_user', null);
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>('financial_transactions', []);
+  const [categories, setCategories] = useLocalStorage<string[]>('financial_categories', [
+    'Alimentação',
+    'Transporte',
+    'Moradia',
+    'Saúde',
+    'Educação',
+    'Lazer',
+    'Outros'
+  ]);
   const [showAuthModal, setShowAuthModal] = useState(!user);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -161,6 +172,10 @@ const Index = () => {
   if (showAuthModal) {
     return <AuthModal onLogin={handleLogin} />;
   }
+
+  const handleUpdateCategories = (newCategories: string[]) => {
+    setCategories(newCategories);
+  };
 
   const renderContent = () => {
     switch (currentPage) {
@@ -410,7 +425,7 @@ const Index = () => {
         return <UserProfile user={user} onUpdateUser={handleUpdateUser} />;
 
       case 'categories':
-        return <CategoryManager categories={categories} onUpdateCategories={() => {}} />;
+        return <CategoryManager categories={categories} onUpdateCategories={handleUpdateCategories} />;
 
       case 'settings':
         return <Settings user={user} />;
@@ -451,3 +466,5 @@ const Index = () => {
 };
 
 export default Index;
+
+}
