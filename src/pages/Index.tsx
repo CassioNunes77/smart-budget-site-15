@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock, Crown } from 'lucide-react';
+import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock, Crown, Lightbulb, Info } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import AuthModal from '@/components/AuthModal';
 import TransactionModal from '@/components/TransactionModal';
@@ -15,6 +15,8 @@ import CategoryManager from '@/components/CategoryManager';
 import PremiumModal from '@/components/PremiumModal';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Transaction {
   id: string;
@@ -42,6 +44,7 @@ const Index = () => {
   const [user, setUser] = useLocalStorage<User | null>('financial_user', null);
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>('financial_transactions', []);
   const [categories, setCategories] = useLocalStorage<string[]>('financial_categories', [
+    'Sem categoria',
     'Alimentação',
     'Transporte',
     'Moradia',
@@ -56,6 +59,9 @@ const Index = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showBalance, setShowBalance] = useState(true);
+  const [notificationSettings, setNotificationSettings] = useLocalStorage('notification_settings', {
+    billReminders: true
+  });
 
   // Calcular totais separando por status
   const getFinancialSummary = () => {
@@ -220,6 +226,23 @@ const Index = () => {
     setCategories(newCategories);
   };
 
+  const handleCategoryDeleted = (deletedCategory: string) => {
+    // Atualizar todas as transações que usam a categoria deletada para "Sem categoria"
+    const updatedTransactions = transactions.map(transaction => 
+      transaction.category === deletedCategory 
+        ? { ...transaction, category: 'Sem categoria' }
+        : transaction
+    );
+    setTransactions(updatedTransactions);
+  };
+
+  const toggleNotificationSetting = (setting: string) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+  };
+
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
@@ -253,6 +276,25 @@ const Index = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Dicas Minimalistas */}
+            {transactions.length === 0 && (
+              <Alert className="border-primary/20 bg-primary/5">
+                <Lightbulb className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-sm">
+                  <strong>Dica:</strong> Comece registrando suas receitas e despesas diárias para ter controle total das suas finanças.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {transactions.length > 0 && transactions.length < 5 && (
+              <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-sm">
+                  <strong>Dica:</strong> Configure transações recorrentes para automatizar o controle de contas fixas mensais.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Cards de Resumo */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -354,6 +396,7 @@ const Index = () => {
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
+                  categories={categories}
                 />
                 {transactions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
@@ -396,6 +439,7 @@ const Index = () => {
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
                   showFilters={true}
+                  categories={categories}
                 />
               </CardContent>
             </Card>
@@ -472,7 +516,13 @@ const Index = () => {
         return <UserProfile user={user} onUpdateUser={handleUpdateUser} onShowPremiumModal={() => setShowPremiumModal(true)} />;
 
       case 'categories':
-        return <CategoryManager categories={categories} onUpdateCategories={handleUpdateCategories} />;
+        return (
+          <CategoryManager 
+            categories={categories} 
+            onUpdateCategories={handleUpdateCategories}
+            onCategoryDeleted={handleCategoryDeleted}
+          />
+        );
 
       case 'settings':
         return <Settings user={user} />;
@@ -498,9 +548,10 @@ const Index = () => {
                         Receba notificações sobre despesas pendentes
                       </p>
                     </div>
-                    <div className="w-10 h-6 bg-primary rounded-full flex items-center">
-                      <div className="w-4 h-4 bg-white rounded-full ml-5 shadow-sm"></div>
-                    </div>
+                    <Switch
+                      checked={notificationSettings.billReminders}
+                      onCheckedChange={() => toggleNotificationSetting('billReminders')}
+                    />
                   </div>
                   
                   <div className="text-center py-8 text-muted-foreground">
@@ -562,3 +613,5 @@ const Index = () => {
 };
 
 export default Index;
+
+</edits_to_apply>

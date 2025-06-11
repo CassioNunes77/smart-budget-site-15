@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,6 +75,7 @@ interface Category {
 interface CategoryManagerProps {
   categories: string[];
   onUpdateCategories: (categories: string[]) => void;
+  onCategoryDeleted?: (deletedCategory: string) => void;
 }
 
 const iconOptions = [
@@ -139,7 +139,7 @@ const colorOptions = [
   '#64748b', '#6b7280', '#374151', '#111827'
 ];
 
-const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateCategories }) => {
+const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateCategories, onCategoryDeleted }) => {
   const [categoryList, setCategoryList] = useState<Category[]>(
     categories.map((cat, index) => ({
       id: `cat-${index}`,
@@ -168,13 +168,30 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateC
   };
 
   const handleDeleteCategory = (id: string) => {
-    const updatedCategories = categoryList.filter(cat => cat.id !== id);
-    setCategoryList(updatedCategories);
-    onUpdateCategories(updatedCategories.map(cat => cat.name));
-    toast({
-      title: "Categoria removida",
-      description: "A categoria foi excluída com sucesso.",
-    });
+    const categoryToDelete = categoryList.find(cat => cat.id === id);
+    if (categoryToDelete && categoryToDelete.name === 'Sem categoria') {
+      toast({
+        title: "Categoria protegida",
+        description: "A categoria 'Sem categoria' não pode ser excluída.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (categoryToDelete) {
+      // Notificar que a categoria foi deletada para atualizar transações
+      if (onCategoryDeleted) {
+        onCategoryDeleted(categoryToDelete.name);
+      }
+      
+      const updatedCategories = categoryList.filter(cat => cat.id !== id);
+      setCategoryList(updatedCategories);
+      onUpdateCategories(updatedCategories.map(cat => cat.name));
+      toast({
+        title: "Categoria removida",
+        description: "A categoria foi excluída e todas as transações foram movidas para 'Sem categoria'.",
+      });
+    }
   };
 
   const handleAddCategory = () => {

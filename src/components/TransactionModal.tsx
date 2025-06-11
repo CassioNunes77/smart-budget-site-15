@@ -1,12 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { X, DollarSign, Calendar, Tag, FileText, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { X, Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface Transaction {
   id: string;
@@ -16,35 +20,33 @@ interface Transaction {
   category: string;
   date: string;
   status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
+  isRecurring?: boolean;
+  recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
+  recurringEndDate?: string;
 }
 
 interface TransactionModalProps {
   onClose: () => void;
-  onSave: (transaction: Transaction | Omit<Transaction, 'id'>) => void;
+  onSave: (transaction: Omit<Transaction, 'id'>) => void;
   editingTransaction?: Transaction | null;
-  categories?: string[];
+  categories: string[];
 }
 
-const TransactionModal: React.FC<TransactionModalProps> = ({ 
-  onClose, 
-  onSave, 
+const TransactionModal: React.FC<TransactionModalProps> = ({
+  onClose,
+  onSave,
   editingTransaction,
-  categories = []
+  categories
 }) => {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [isReceived, setIsReceived] = useState(true);
+  const [status, setStatus] = useState<'paid' | 'unpaid' | 'received' | 'unreceived'>('paid');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'weekly' | 'yearly'>('monthly');
-  const [recurringEndDate, setRecurringEndDate] = useState('');
-
-  // Adicionar "Sem categoria" às categorias se não existir
-  const categoriesWithDefault = categories.includes('Sem categoria') 
-    ? categories 
-    : ['Sem categoria', ...categories];
+  const [recurringEndDate, setRecurringEndDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (editingTransaction) {
@@ -53,137 +55,115 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       setDescription(editingTransaction.description);
       setCategory(editingTransaction.category);
       setDate(editingTransaction.date);
-      
-      if (editingTransaction.status) {
-        setIsReceived(
-          editingTransaction.status === 'received' || 
-          editingTransaction.status === 'paid'
-        );
+      setStatus(editingTransaction.status || 'paid');
+      setIsRecurring(editingTransaction.isRecurring || false);
+      setRecurringFrequency(editingTransaction.recurringFrequency || 'monthly');
+      if (editingTransaction.recurringEndDate) {
+        setRecurringEndDate(new Date(editingTransaction.recurringEndDate + '-01'));
       } else {
-        setIsReceived(true);
+        setRecurringEndDate(undefined);
       }
+    } else {
+      setType('expense');
+      setAmount('');
+      setDescription('');
+      setCategory('');
+      setDate(new Date().toISOString().split('T')[0]);
+      setStatus('paid');
+      setIsRecurring(false);
+      setRecurringFrequency('monthly');
+      setRecurringEndDate(undefined);
     }
   }, [editingTransaction]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || !description) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    if (!amount || !description || parseFloat(amount) <= 0) {
       return;
     }
 
-    if (isRecurring && !recurringEndDate) {
-      alert('Por favor, selecione a data final para transações recorrentes.');
-      return;
-    }
+    const finalCategory = category || 'Sem categoria';
 
-    let status: 'paid' | 'unpaid' | 'received' | 'unreceived';
-    if (type === 'income') {
-      status = isReceived ? 'received' : 'unreceived';
-    } else {
-      status = isReceived ? 'paid' : 'unpaid';
-    }
-
-    const transactionData = {
+    const transactionData: Omit<Transaction, 'id'> = {
       type,
       amount: parseFloat(amount),
       description,
-      category: category || 'Sem categoria', // Define automaticamente se não escolhido
+      category: finalCategory,
       date,
       status,
       isRecurring,
       recurringFrequency: isRecurring ? recurringFrequency : undefined,
-      recurringEndDate: isRecurring ? recurringEndDate : undefined,
+      recurringEndDate: isRecurring && recurringEndDate ? format(recurringEndDate, 'yyyy-MM') : undefined
     };
 
-    if (editingTransaction) {
-      onSave({ ...transactionData, id: editingTransaction.id });
-    } else {
-      onSave(transactionData);
-    }
+    onSave(transactionData);
   };
 
-  const formatAmountInput = (value: string) => {
-    const numbers = value.replace(/[^\d.,]/g, '');
-    return numbers.replace(',', '.');
-  };
-
-  const getStatusText = () => {
-    if (type === 'income') {
-      return isReceived ? 'Recebido' : 'Não Recebido';
-    } else {
-      return isReceived ? 'Pago' : 'Não Pago';
-    }
-  };
+  const availableCategories = categories.includes('Sem categoria') 
+    ? categories 
+    : ['Sem categoria', ...categories];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in">
-        <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-card border-b">
-          <CardTitle className="text-xl">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md bg-background">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle>
             {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-        
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Tipo de Transação */}
-            <div className="space-y-3">
-              <Label>Tipo de Transação</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={type === 'income' ? 'default' : 'outline'}
-                  className={`flex-1 h-11 ${type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
-                  onClick={() => setType('income')}
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Receita
-                </Button>
-                <Button
-                  type="button"
-                  variant={type === 'expense' ? 'default' : 'outline'}
-                  className={`flex-1 h-11 ${type === 'expense' ? 'bg-red-600 hover:bg-red-700' : ''}`}
-                  onClick={() => setType('expense')}
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Despesa
-                </Button>
-              </div>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Tipo */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={type === 'expense' ? 'default' : 'outline'}
+                onClick={() => {
+                  setType('expense');
+                  setStatus('paid');
+                }}
+                className="w-full"
+              >
+                Despesa
+              </Button>
+              <Button
+                type="button"
+                variant={type === 'income' ? 'default' : 'outline'}
+                onClick={() => {
+                  setType('income');
+                  setStatus('received');
+                }}
+                className="w-full"
+              >
+                Receita
+              </Button>
             </div>
 
             {/* Valor */}
             <div className="space-y-2">
-              <Label htmlFor="amount" className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                Valor *
-              </Label>
+              <Label htmlFor="amount">Valor</Label>
               <Input
                 id="amount"
                 type="number"
-                step="0.01"
                 placeholder="0,00"
                 value={amount}
-                onChange={(e) => setAmount(formatAmountInput(e.target.value))}
+                onChange={(e) => setAmount(e.target.value)}
+                step="0.01"
+                min="0"
                 required
-                className="text-lg"
               />
             </div>
 
             {/* Descrição */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Descrição *
-              </Label>
+              <Label htmlFor="description">Descrição</Label>
               <Input
                 id="description"
-                type="text"
-                placeholder="Descreva a transação..."
+                placeholder="Ex: Almoço no restaurante"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
@@ -192,16 +172,13 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
             {/* Categoria */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                Categoria
-              </Label>
+              <Label htmlFor="category">Categoria</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria (padrão: Sem categoria)" />
+                  <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoriesWithDefault.map((cat) => (
+                  {availableCategories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
@@ -212,10 +189,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
             {/* Data */}
             <div className="space-y-2">
-              <Label htmlFor="date" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Data
-              </Label>
+              <Label htmlFor="date">Data</Label>
               <Input
                 id="date"
                 type="date"
@@ -225,98 +199,94 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               />
             </div>
 
-            {/* Status de Pagamento/Recebimento */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                Status
-              </Label>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <span className="font-medium">{getStatusText()}</span>
-                  <p className="text-sm text-muted-foreground">
-                    {type === 'income' 
-                      ? 'Marque se já recebeu este valor' 
-                      : 'Marque se já pagou esta despesa'
-                    }
-                  </p>
-                </div>
-                <Switch
-                  checked={isReceived}
-                  onCheckedChange={setIsReceived}
-                />
-              </div>
+            {/* Status */}
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(value: 'paid' | 'unpaid' | 'received' | 'unreceived') => setStatus(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {type === 'expense' ? (
+                    <>
+                      <SelectItem value="paid">Pago</SelectItem>
+                      <SelectItem value="unpaid">Não Pago</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="received">Recebido</SelectItem>
+                      <SelectItem value="unreceived">Não Recebido</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Transação Recorrente */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Transação Recorrente
-              </Label>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <span className="font-medium">Repetir automaticamente</span>
-                  <p className="text-sm text-muted-foreground">
-                    Cria automaticamente as próximas transações
-                  </p>
-                </div>
-                <Switch
-                  checked={isRecurring}
-                  onCheckedChange={setIsRecurring}
-                />
-              </div>
-              
-              {isRecurring && (
-                <div className="ml-4 space-y-4">
-                  <div className="space-y-2">
-                    <Label>Frequência</Label>
-                    <Select value={recurringFrequency} onValueChange={(value: 'monthly' | 'weekly' | 'yearly') => setRecurringFrequency(value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="weekly">Semanal</SelectItem>
-                        <SelectItem value="monthly">Mensal</SelectItem>
-                        <SelectItem value="yearly">Anual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="recurringEndDate">Data Final *</Label>
-                    <Input
-                      id="recurringEndDate"
-                      type="month"
-                      value={recurringEndDate}
-                      onChange={(e) => setRecurringEndDate(e.target.value)}
-                      required={isRecurring}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              )}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="recurring"
+                checked={isRecurring}
+                onCheckedChange={setIsRecurring}
+              />
+              <Label htmlFor="recurring">Transação Recorrente</Label>
             </div>
 
-            {/* Botões */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="flex-1 h-11"
-              >
-                Cancelar
+            {isRecurring && (
+              <div className="space-y-4 p-3 border rounded-lg bg-muted/20">
+                <div className="space-y-2">
+                  <Label htmlFor="frequency">Frequência</Label>
+                  <Select value={recurringFrequency} onValueChange={(value: 'monthly' | 'weekly' | 'yearly') => setRecurringFrequency(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="yearly">Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Data Final</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !recurringEndDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {recurringEndDate ? (
+                          format(recurringEndDate, "MMMM 'de' yyyy", { locale: ptBR })
+                        ) : (
+                          <span>Selecione o mês e ano</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={recurringEndDate}
+                        onSelect={setRecurringEndDate}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" className="flex-1">
+                {editingTransaction ? 'Salvar' : 'Adicionar'}
               </Button>
-              <Button
-                type="submit"
-                className={`flex-1 h-11 ${
-                  type === 'income' 
-                    ? 'bg-emerald-600 hover:bg-emerald-700' 
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-              >
-                {editingTransaction ? 'Atualizar' : 'Salvar'}
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
               </Button>
             </div>
           </form>
