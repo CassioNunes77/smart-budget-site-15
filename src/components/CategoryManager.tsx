@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +65,7 @@ import {
   Trees
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface Category {
   id: string;
@@ -77,6 +78,7 @@ interface CategoryManagerProps {
   categories: string[];
   onUpdateCategories: (categories: string[]) => void;
   onCategoryDeleted?: (deletedCategory: string) => void;
+  userId: string;
 }
 
 const iconOptions = [
@@ -140,23 +142,34 @@ const colorOptions = [
   '#64748b', '#6b7280', '#374151', '#111827'
 ];
 
-const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateCategories, onCategoryDeleted }) => {
-  // Filtrar "Sem categoria" da lista para não exibir na tela
+const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateCategories, onCategoryDeleted, userId }) => {
   const editableCategories = categories.filter(cat => cat !== 'Sem categoria');
   
-  const [categoryList, setCategoryList] = useState<Category[]>(
-    editableCategories.map((cat, index) => ({
-      id: `cat-${index}`,
-      name: cat,
-      icon: 'Tag',
-      color: colorOptions[index % colorOptions.length]
-    }))
-  );
+  // Usar localStorage específico do usuário para categorias personalizadas
+  const [userCategories, setUserCategories] = useLocalStorage<Category[]>(`categories_${userId}`, []);
+  
+  const [categoryList, setCategoryList] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryIcon, setNewCategoryIcon] = useState('Tag');
   const [newCategoryColor, setNewCategoryColor] = useState(colorOptions[0]);
   const [showNewCategory, setShowNewCategory] = useState(false);
+
+  // Inicializar categorias na primeira vez
+  useEffect(() => {
+    if (userCategories.length === 0 && editableCategories.length > 0) {
+      const initialCategories = editableCategories.map((cat, index) => ({
+        id: `cat-${index}`,
+        name: cat,
+        icon: 'Tag',
+        color: colorOptions[index % colorOptions.length]
+      }));
+      setUserCategories(initialCategories);
+      setCategoryList(initialCategories);
+    } else {
+      setCategoryList(userCategories);
+    }
+  }, [editableCategories, userCategories, setUserCategories]);
 
   const handleSaveCategory = (category: Category) => {
     const updatedCategories = categoryList.map(cat => 
@@ -164,6 +177,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateC
     );
     
     setCategoryList(updatedCategories);
+    setUserCategories(updatedCategories);
     
     // Reconstruir a lista completa de categorias, mantendo "Sem categoria"
     const allCategories = ['Sem categoria', ...updatedCategories.map(cat => cat.name)];
@@ -180,15 +194,14 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateC
     const categoryToDelete = categoryList.find(cat => cat.id === id);
     if (!categoryToDelete) return;
 
-    // Notificar que a categoria foi deletada para atualizar transações
     if (onCategoryDeleted) {
       onCategoryDeleted(categoryToDelete.name);
     }
     
     const updatedCategories = categoryList.filter(cat => cat.id !== id);
     setCategoryList(updatedCategories);
+    setUserCategories(updatedCategories);
     
-    // Reconstruir a lista completa de categorias, mantendo "Sem categoria"
     const allCategories = ['Sem categoria', ...updatedCategories.map(cat => cat.name)];
     onUpdateCategories(allCategories);
     
@@ -209,8 +222,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, onUpdateC
       
       const updatedCategories = [...categoryList, newCategory];
       setCategoryList(updatedCategories);
+      setUserCategories(updatedCategories);
       
-      // Reconstruir a lista completa de categorias, mantendo "Sem categoria"
       const allCategories = ['Sem categoria', ...updatedCategories.map(cat => cat.name)];
       onUpdateCategories(allCategories);
       

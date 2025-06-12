@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Palette, Info, Shield, HelpCircle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { User, Palette, Info, Shield, HelpCircle, Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 interface User {
   id: string;
@@ -19,6 +21,8 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange }) => {
+  const { theme, toggleTheme } = useTheme();
+  
   const currencyOptions = [
     { value: 'BRL', label: 'Real Brasileiro (BRL)' },
     { value: 'USD', label: 'Dólar Americano (USD)' },
@@ -72,9 +76,19 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Tema</label>
-              <p className="text-foreground">Sistema (Auto)</p>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-muted-foreground">Modo Escuro</label>
+                <p className="text-xs text-muted-foreground">Alternar entre modo claro e escuro</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Sun className="w-4 h-4" />
+                <Switch 
+                  checked={theme === 'dark'} 
+                  onCheckedChange={toggleTheme}
+                />
+                <Moon className="w-4 h-4" />
+              </div>
             </div>
             <Separator />
             <div className="space-y-2">
@@ -111,7 +125,7 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Versão</label>
-              <p className="text-foreground">v0.2.0 Alpha</p>
+              <p className="text-foreground">v0.2.1 Alpha</p>
             </div>
             <Separator />
             <div>

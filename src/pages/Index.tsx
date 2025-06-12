@@ -18,6 +18,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import CsvUpload from '@/components/CsvUpload';
 
 interface Transaction {
   id: string;
@@ -39,7 +40,27 @@ interface User {
   photoURL?: string;
 }
 
-const Index = () => {
+const formatCurrency = (amount: number, currencyCode: string): string => {
+  const currencies = {
+    BRL: { locale: 'pt-BR', currency: 'BRL' },
+    USD: { locale: 'en-US', currency: 'USD' },
+    EUR: { locale: 'de-DE', currency: 'EUR' },
+    BTC: { locale: 'en-US', currency: 'BTC', customFormat: true }
+  };
+
+  const config = currencies[currencyCode as keyof typeof currencies];
+  
+  if (currencyCode === 'BTC') {
+    return `₿ ${amount.toFixed(8)}`;
+  }
+  
+  return new Intl.NumberFormat(config.locale, {
+    style: 'currency',
+    currency: config.currency
+  }).format(amount);
+};
+
+const Dashboard: React.FC = () => {
   // Initialize theme
   useTheme();
   
@@ -256,24 +277,12 @@ const Index = () => {
     setShowTransactionModal(true);
   };
 
-  const formatCurrency = (value: number) => {
-    const currencyMap = {
-      'BRL': { locale: 'pt-BR', currency: 'BRL' },
-      'USD': { locale: 'en-US', currency: 'USD' },
-      'EUR': { locale: 'de-DE', currency: 'EUR' },
-      'BTC': { locale: 'en-US', currency: 'BTC' }
-    };
-    
-    const config = currencyMap[currency as keyof typeof currencyMap] || currencyMap.BRL;
-    
-    if (currency === 'BTC') {
-      return `₿ ${(value / 100000).toFixed(8)}`;
-    }
-    
-    return new Intl.NumberFormat(config.locale, {
-      style: 'currency',
-      currency: config.currency
-    }).format(value);
+  const handleImportTransactions = (importedTransactions: Transaction[]) => {
+    setTransactions(prev => [...prev, ...importedTransactions]);
+    toast({
+      title: "Transações importadas!",
+      description: `${importedTransactions.length} transações foram adicionadas com sucesso.`,
+    });
   };
 
   const getGreeting = () => {
@@ -337,7 +346,7 @@ const Index = () => {
     }));
   };
 
-  const renderContent = () => {
+  const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
         return (
@@ -615,8 +624,9 @@ const Index = () => {
         return (
           <CategoryManager 
             categories={categories} 
-            onUpdateCategories={handleUpdateCategories}
+            onUpdateCategories={setCategories}
             onCategoryDeleted={handleCategoryDeleted}
+            userId={user.id}
           />
         );
 
@@ -685,7 +695,7 @@ const Index = () => {
         />
         
         <main className="flex-1 ml-0 lg:ml-64 p-3 md:p-4 lg:p-8">
-          {renderContent()}
+          {renderPage()}
         </main>
       </div>
 
@@ -709,4 +719,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Dashboard;
