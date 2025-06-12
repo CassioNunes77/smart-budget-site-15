@@ -36,6 +36,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  photoURL?: string;
 }
 
 const Index = () => {
