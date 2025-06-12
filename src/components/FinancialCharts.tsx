@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 interface Transaction {
@@ -18,8 +21,12 @@ interface FinancialChartsProps {
 }
 
 const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detailed = false }) => {
+  const [periodFilter, setPeriodFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#06b6d4'];
-  const GRAY_COLORS = ['#9ca3af', '#6b7280']; // Cinza claro e escuro para não consolidados
+  const GRAY_COLORS = ['#9ca3af', '#6b7280'];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -28,22 +35,61 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
     }).format(value);
   };
 
+  // Filtrar transações por período
+  const filterTransactionsByPeriod = () => {
+    let filtered = [...transactions];
+
+    if (periodFilter !== 'all') {
+      const now = new Date();
+      let startFilterDate = new Date();
+      
+      switch (periodFilter) {
+        case 'week':
+          startFilterDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startFilterDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          startFilterDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          startFilterDate.setFullYear(now.getFullYear() - 1);
+          break;
+        case 'custom':
+          if (startDate && endDate) {
+            filtered = filtered.filter(t => {
+              const transactionDate = new Date(t.date);
+              return transactionDate >= new Date(startDate) && transactionDate <= new Date(endDate);
+            });
+          }
+          return filtered;
+      }
+      
+      filtered = filtered.filter(t => new Date(t.date) >= startFilterDate);
+    }
+
+    return filtered;
+  };
+
+  const filteredTransactions = filterTransactionsByPeriod();
+
   // Separar transações por status
   const getTransactionsByStatus = () => {
     const consolidated = {
-      income: transactions.filter(t => 
+      income: filteredTransactions.filter(t => 
         t.type === 'income' && (!t.status || t.status === 'received')
       ).reduce((sum, t) => sum + t.amount, 0),
-      expense: transactions.filter(t => 
+      expense: filteredTransactions.filter(t => 
         t.type === 'expense' && (!t.status || t.status === 'paid')
       ).reduce((sum, t) => sum + t.amount, 0)
     };
 
     const pending = {
-      income: transactions.filter(t => 
+      income: filteredTransactions.filter(t => 
         t.type === 'income' && t.status === 'unreceived'
       ).reduce((sum, t) => sum + t.amount, 0),
-      expense: transactions.filter(t => 
+      expense: filteredTransactions.filter(t => 
         t.type === 'expense' && t.status === 'unpaid'
       ).reduce((sum, t) => sum + t.amount, 0)
     };
@@ -52,6 +98,40 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
   };
 
   const { consolidated, pending } = getTransactionsByStatus();
+
+  // Dados para gráfico de receitas por categoria
+  const incomeByCategory = React.useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    
+    filteredTransactions
+      .filter(t => t.type === 'income')
+      .forEach(transaction => {
+        const existing = categoryMap.get(transaction.category) || 0;
+        categoryMap.set(transaction.category, existing + transaction.amount);
+      });
+
+    return Array.from(categoryMap.entries()).map(([category, amount]) => ({
+      name: category,
+      value: amount
+    }));
+  }, [filteredTransactions]);
+
+  // Dados para gráfico de despesas por categoria
+  const expenseByCategory = React.useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    
+    filteredTransactions
+      .filter(t => t.type === 'expense')
+      .forEach(transaction => {
+        const existing = categoryMap.get(transaction.category) || 0;
+        categoryMap.set(transaction.category, existing + transaction.amount);
+      });
+
+    return Array.from(categoryMap.entries()).map(([category, amount]) => ({
+      name: category,
+      value: amount
+    }));
+  }, [filteredTransactions]);
 
   // Dados para gráfico de pizza (incluindo pendentes)
   const pieData = [
@@ -86,7 +166,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       expensePending: number;
     }>();
     
-    transactions.forEach(transaction => {
+    filteredTransactions.forEach(transaction => {
       const existing = categoryMap.get(transaction.category) || { 
         incomeConsolidated: 0, 
         incomePending: 0,
@@ -121,7 +201,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       'Despesas Consolidadas': amounts.expenseConsolidated,
       'Despesas Pendentes': amounts.expensePending,
     }));
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   // Dados mensais (incluindo pendentes) - com ordenação correta
   const monthlyData = React.useMemo(() => {
@@ -132,7 +212,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       expensePending: number;
     }>();
     
-    transactions.forEach(transaction => {
+    filteredTransactions.forEach(transaction => {
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
@@ -176,33 +256,125 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       }))
       .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
       .slice(-6);
-  }, [transactions]);
+  }, [filteredTransactions]);
 
-  if (transactions.length === 0) {
+  if (filteredTransactions.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Distribuição por Tipo</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center h-64">
-            <p className="text-gray-500">Nenhum dado disponível</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Histórico Mensal</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center h-64">
-            <p className="text-gray-500">Nenhum dado disponível</p>
-          </CardContent>
-        </Card>
+      <div className="space-y-6">
+        {detailed && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Filtros de Período</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Período</Label>
+                  <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="week">Última semana</SelectItem>
+                      <SelectItem value="month">Último mês</SelectItem>
+                      <SelectItem value="quarter">Últimos 3 meses</SelectItem>
+                      <SelectItem value="year">Último ano</SelectItem>
+                      <SelectItem value="custom">Personalizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {periodFilter === 'custom' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Data Inicial</Label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Data Final</Label>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Nenhum dado disponível</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center h-64">
+              <p className="text-gray-500">Nenhum dado para o período selecionado</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {detailed && (
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Filtros de Período</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Período</Label>
+                <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="week">Última semana</SelectItem>
+                    <SelectItem value="month">Último mês</SelectItem>
+                    <SelectItem value="quarter">Últimos 3 meses</SelectItem>
+                    <SelectItem value="year">Último ano</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {periodFilter === 'custom' && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Data Inicial</Label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data Final</Label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Gráfico de Pizza */}
         <Card className="shadow-lg">
@@ -256,25 +428,86 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       </div>
 
       {detailed && (
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Análise por Categoria e Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={categoryData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
-                <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Bar dataKey="Receitas Consolidadas" fill="#10b981" />
-                <Bar dataKey="Receitas Pendentes" fill="#9ca3af" />
-                <Bar dataKey="Despesas Consolidadas" fill="#ef4444" />
-                <Bar dataKey="Despesas Pendentes" fill="#6b7280" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Receitas por Categoria */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Receitas por Categoria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={incomeByCategory}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {incomeByCategory.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Despesas por Categoria */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Despesas por Categoria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={expenseByCategory}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {expenseByCategory.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Análise por Categoria e Status */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Análise por Categoria e Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={categoryData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" />
+                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Bar dataKey="Receitas Consolidadas" fill="#10b981" />
+                  <Bar dataKey="Receitas Pendentes" fill="#9ca3af" />
+                  <Bar dataKey="Despesas Consolidadas" fill="#ef4444" />
+                  <Bar dataKey="Despesas Pendentes" fill="#6b7280" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );

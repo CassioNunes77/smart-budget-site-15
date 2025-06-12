@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, TrendingUp, TrendingDown, Filter, CheckCircle, XCircle, Clock, Tag } from 'lucide-react';
+import { Edit, Trash2, TrendingUp, TrendingDown, Filter, CheckCircle, XCircle, Clock, Tag, Upload } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -24,6 +24,8 @@ interface TransactionsListProps {
   onUpdateStatus?: (id: string, status: 'paid' | 'unpaid' | 'received' | 'unreceived') => void;
   showFilters?: boolean;
   categories?: string[];
+  showUpload?: boolean;
+  onUploadCSV?: (file: File) => void;
 }
 
 const TransactionsList: React.FC<TransactionsListProps> = ({ 
@@ -32,9 +34,12 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
   onDelete,
   onUpdateStatus,
   showFilters = false,
-  categories = []
+  categories = [],
+  showUpload = false,
+  onUploadCSV
 }) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
@@ -49,6 +54,13 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && onUploadCSV) {
+      onUploadCSV(file);
+    }
   };
 
   const getCategoryColor = (category: string) => {
@@ -123,6 +135,11 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
   const filterTransactions = () => {
     let filtered = [...transactions];
 
+    // Filtro por tipo
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(t => t.type === typeFilter);
+    }
+
     // Filtro por status
     if (statusFilter !== 'all') {
       if (statusFilter === 'confirmed') {
@@ -188,13 +205,48 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       {showFilters && (
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              Filtros
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Filtros
+              </CardTitle>
+              {showUpload && (
+                <div>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="csv-upload"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('csv-upload')?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload CSV
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="income">Receitas</SelectItem>
+                    <SelectItem value="expense">Despesas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>

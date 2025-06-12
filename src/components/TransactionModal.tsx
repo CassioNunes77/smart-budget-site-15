@@ -44,7 +44,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [status, setStatus] = useState<'paid' | 'unpaid' | 'received' | 'unreceived'>('paid');
+  const [status, setStatus] = useState<'paid' | 'unpaid' | 'received' | 'unreceived'>('unpaid');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'weekly' | 'yearly'>('monthly');
   const [recurringEndDate, setRecurringEndDate] = useState<Date | undefined>(undefined);
@@ -56,7 +56,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       setDescription(editingTransaction.description);
       setCategory(editingTransaction.category);
       setDate(editingTransaction.date);
-      setStatus(editingTransaction.status || 'paid');
+      setStatus(editingTransaction.status || (editingTransaction.type === 'income' ? 'unreceived' : 'unpaid'));
       setIsRecurring(editingTransaction.isRecurring || false);
       setRecurringFrequency(editingTransaction.recurringFrequency || 'monthly');
       if (editingTransaction.recurringEndDate) {
@@ -70,7 +70,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       setDescription('');
       setCategory('');
       setDate(new Date().toISOString().split('T')[0]);
-      setStatus('paid');
+      setStatus('unpaid');
       setIsRecurring(false);
       setRecurringFrequency('monthly');
       setRecurringEndDate(undefined);
@@ -105,7 +105,6 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     ? categories 
     : ['Sem categoria', ...categories];
 
-  // Função para determinar se está pago/recebido ou não
   const getStatusBoolean = () => {
     if (type === 'expense') {
       return status === 'paid';
@@ -119,6 +118,16 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       setStatus(checked ? 'paid' : 'unpaid');
     } else {
       setStatus(checked ? 'received' : 'unreceived');
+    }
+  };
+
+  const handleTypeChange = (newType: 'income' | 'expense') => {
+    setType(newType);
+    // Resetar status baseado no novo tipo, sempre iniciando em off
+    if (newType === 'expense') {
+      setStatus('unpaid');
+    } else {
+      setStatus('unreceived');
     }
   };
 
@@ -140,22 +149,16 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               <Button
                 type="button"
                 variant={type === 'expense' ? 'default' : 'outline'}
-                onClick={() => {
-                  setType('expense');
-                  setStatus('paid');
-                }}
-                className="w-full"
+                onClick={() => handleTypeChange('expense')}
+                className={`w-full ${type === 'expense' ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-red-600 text-red-600 hover:bg-red-50'}`}
               >
                 Despesa
               </Button>
               <Button
                 type="button"
                 variant={type === 'income' ? 'default' : 'outline'}
-                onClick={() => {
-                  setType('income');
-                  setStatus('received');
-                }}
-                className="w-full"
+                onClick={() => handleTypeChange('income')}
+                className={`w-full ${type === 'income' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
               >
                 Receita
               </Button>
@@ -282,13 +285,15 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={recurringEndDate}
-                        onSelect={setRecurringEndDate}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
+                      <div className="h-80">
+                        <Calendar
+                          mode="single"
+                          selected={recurringEndDate}
+                          onSelect={setRecurringEndDate}
+                          initialFocus
+                          className="pointer-events-auto h-full"
+                        />
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>

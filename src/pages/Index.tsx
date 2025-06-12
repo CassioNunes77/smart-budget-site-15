@@ -98,6 +98,7 @@ const Index = () => {
   const handleLogin = (userData: User) => {
     setUser(userData);
     setShowAuthModal(false);
+    setCurrentPage('dashboard'); // Sempre iniciar no dashboard após login
     toast({
       title: "Login realizado com sucesso!",
       description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
@@ -216,6 +217,21 @@ const Index = () => {
     if (hour < 12) return 'Bom dia';
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
+  };
+
+  const handleUploadCSV = (file: File) => {
+    // Implementação básica para upload de CSV
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      // Aqui você pode implementar o parser do CSV
+      console.log('CSV content:', text);
+      toast({
+        title: "Arquivo CSV carregado",
+        description: "Funcionalidade em desenvolvimento",
+      });
+    };
+    reader.readAsText(file);
   };
 
   if (showAuthModal) {
@@ -440,6 +456,8 @@ const Index = () => {
                   onUpdateStatus={handleUpdateTransactionStatus}
                   showFilters={true}
                   categories={categories}
+                  showUpload={true}
+                  onUploadCSV={handleUploadCSV}
                 />
               </CardContent>
             </Card>
