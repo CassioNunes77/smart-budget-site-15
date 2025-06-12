@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -21,6 +20,7 @@ interface SidebarProps {
   onPageChange: (page: string) => void;
   onLogout: () => void;
   userName: string;
+  userPhotoURL?: string;
   onShowPremiumModal: () => void;
 }
 
@@ -62,7 +62,7 @@ const menuItems = [
   }
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, userName, onShowPremiumModal }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, userName, userPhotoURL, onShowPremiumModal }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handlePageChange = (page: string) => {
@@ -112,10 +112,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
         {/* User info */}
         <div className="p-4 border-b border-sidebar-border shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-primary">
-                {userName.charAt(0).toUpperCase()}
-              </span>
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+              {userPhotoURL ? (
+                <img 
+                  src={userPhotoURL} 
+                  alt={userName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-medium text-primary">
+                  {userName.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-sidebar-foreground truncate">

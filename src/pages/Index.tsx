@@ -17,6 +17,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 
 interface Transaction {
   id: string;
@@ -40,6 +41,8 @@ interface User {
 const Index = () => {
   // Initialize theme
   useTheme();
+  
+  const { user: firebaseUser, loading: firebaseLoading, handleLogout: firebaseLogout } = useFirebaseAuth();
   
   const [user, setUser] = useLocalStorage<User | null>('financial_user', null);
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>('financial_transactions', []);
@@ -95,6 +98,27 @@ const Index = () => {
 
   const financialSummary = getFinancialSummary();
 
+  // Effect para sincronizar o usuário do Firebase com o estado local
+  useEffect(() => {
+    if (firebaseUser) {
+      const userData: User = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'Usuário Google',
+        email: firebaseUser.email || '',
+        photoURL: firebaseUser.photoURL || undefined
+      };
+      setUser(userData);
+      setShowAuthModal(false);
+      setCurrentPage('dashboard');
+      toast({
+        title: "Login realizado com sucesso!",
+        description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
+      });
+    } else if (!firebaseLoading && !user) {
+      setShowAuthModal(true);
+    }
+  }, [firebaseUser, firebaseLoading, setUser]);
+
   const handleLogin = (userData: User) => {
     setUser(userData);
     setShowAuthModal(false);
@@ -105,14 +129,27 @@ const Index = () => {
     });
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setTransactions([]);
-    setShowAuthModal(true);
-    toast({
-      title: "Logout realizado",
-      description: "Até logo!",
-    });
+  const handleLogout = async () => {
+    try {
+      await firebaseLogout();
+      setUser(null);
+      setTransactions([]);
+      setShowAuthModal(true);
+      toast({
+        title: "Logout realizado",
+        description: "Até logo!",
+      });
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      // Fallback para logout manual se o Firebase falhar
+      setUser(null);
+      setTransactions([]);
+      setShowAuthModal(true);
+      toast({
+        title: "Logout realizado",
+        description: "Até logo!",
+      });
+    }
   };
 
   const handleUpdateUser = (userData: { name: string; email: string }) => {
@@ -234,7 +271,21 @@ const Index = () => {
     reader.readAsText(file);
   };
 
-  if (showAuthModal) {
+  // Mostrar loading enquanto verifica autenticação do Firebase
+  if (firebaseLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <DollarSign className="w-8 h-8 text-primary animate-pulse" />
+          </div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showAuthModal && !firebaseUser) {
     return <AuthModal onLogin={handleLogin} />;
   }
 
@@ -602,6 +653,7 @@ const Index = () => {
           onPageChange={setCurrentPage} 
           onLogout={handleLogout}
           userName={user?.name || 'Usuário'}
+          userPhotoURL={user?.photoURL}
           onShowPremiumModal={() => setShowPremiumModal(true)}
         />
         
