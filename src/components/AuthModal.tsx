@@ -2,10 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LogIn, DollarSign, AlertCircle } from 'lucide-react';
+import { DollarSign, AlertCircle } from 'lucide-react';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 
 interface User {
@@ -20,28 +18,8 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { handleGoogleLogin, error } = useFirebaseAuth();
-
-  const handleManualLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (username === 'Master123' && password === 'Master123') {
-      setIsLoading(true);
-      setTimeout(() => {
-        onLogin({
-          id: 'master',
-          name: 'Usuário Master',
-          email: 'master@financeiro.com'
-        });
-        setIsLoading(false);
-      }, 1000);
-    } else {
-      alert('Credenciais inválidas! Use: Master123 / Master123');
-    }
-  };
 
   const handleFirebaseGoogleLogin = async () => {
     setIsLoading(true);
@@ -131,54 +109,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
             {isLoading ? 'Entrando...' : 'Entrar com Google (Teste)'}
           </Button>
           
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">ou login manual</span>
-            </div>
-          </div>
-          
-          <form onSubmit={handleManualLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Digite Master123"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Digite Master123"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              size="lg"
-            >
-              <LogIn className="w-5 h-5 mr-2" />
-              {isLoading ? 'Entrando...' : 'Entrar'}
-            </Button>
-          </form>
-          
           <div className="text-center">
             <p className="text-xs text-gray-500">
-              Credenciais de teste: Master123 / Master123
+              Use a opção de teste para acesso rápido ou faça login com sua conta Google
             </p>
           </div>
         </CardContent>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock, Crown, Lightbulb, Info } from 'lucide-react';
@@ -57,6 +57,7 @@ const Index = () => {
     'Lazer',
     'Outros'
   ]);
+  const [currency, setCurrency] = useLocalStorage<string>('financial_currency', 'BRL');
   const [showAuthModal, setShowAuthModal] = useState(!user);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -66,6 +67,9 @@ const Index = () => {
   const [notificationSettings, setNotificationSettings] = useLocalStorage('notification_settings', {
     billReminders: true
   });
+  
+  // Ref para controlar se já mostrou o toast de login
+  const hasShownLoginToast = useRef(false);
 
   // Calcular totais separando por status
   const getFinancialSummary = () => {
@@ -101,7 +105,7 @@ const Index = () => {
 
   // Effect para sincronizar o usuário do Firebase com o estado local
   useEffect(() => {
-    if (firebaseUser) {
+    if (firebaseUser && !hasShownLoginToast.current) {
       const userData: User = {
         id: firebaseUser.uid,
         name: firebaseUser.displayName || 'Usuário Google',
@@ -111,23 +115,30 @@ const Index = () => {
       setUser(userData);
       setShowAuthModal(false);
       setCurrentPage('dashboard');
+      
+      // Mostrar toast apenas uma vez
       toast({
         title: "Login realizado com sucesso!",
         description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
       });
-    } else if (!firebaseLoading && !user) {
+      hasShownLoginToast.current = true;
+    } else if (!firebaseLoading && !user && !firebaseUser) {
       setShowAuthModal(true);
+      hasShownLoginToast.current = false;
     }
-  }, [firebaseUser, firebaseLoading, setUser]);
+  }, [firebaseUser, firebaseLoading, setUser, user]);
 
   const handleLogin = (userData: User) => {
     setUser(userData);
     setShowAuthModal(false);
-    setCurrentPage('dashboard'); // Sempre iniciar no dashboard após login
-    toast({
-      title: "Login realizado com sucesso!",
-      description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
-    });
+    setCurrentPage('dashboard');
+    if (!hasShownLoginToast.current) {
+      toast({
+        title: "Login realizado com sucesso!",
+        description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
+      });
+      hasShownLoginToast.current = true;
+    }
   };
 
   const handleLogout = async () => {
@@ -136,6 +147,7 @@ const Index = () => {
       setUser(null);
       setTransactions([]);
       setShowAuthModal(true);
+      hasShownLoginToast.current = false;
       toast({
         title: "Logout realizado",
         description: "Até logo!",
@@ -146,6 +158,7 @@ const Index = () => {
       setUser(null);
       setTransactions([]);
       setShowAuthModal(true);
+      hasShownLoginToast.current = false;
       toast({
         title: "Logout realizado",
         description: "Até logo!",
@@ -214,7 +227,7 @@ const Index = () => {
       setTransactions([newTransaction, ...transactions]);
       toast({
         title: "Transação adicionada!",
-        description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de R$ ${transaction.amount.toFixed(2)} registrada.`,
+        description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de ${formatCurrency(transaction.amount)} registrada.`,
       });
     }
     setShowTransactionModal(false);
@@ -244,9 +257,22 @@ const Index = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    const currencyMap = {
+      'BRL': { locale: 'pt-BR', currency: 'BRL' },
+      'USD': { locale: 'en-US', currency: 'USD' },
+      'EUR': { locale: 'de-DE', currency: 'EUR' },
+      'BTC': { locale: 'en-US', currency: 'BTC' }
+    };
+    
+    const config = currencyMap[currency as keyof typeof currencyMap] || currencyMap.BRL;
+    
+    if (currency === 'BTC') {
+      return `₿ ${(value / 100000).toFixed(8)}`;
+    }
+    
+    return new Intl.NumberFormat(config.locale, {
       style: 'currency',
-      currency: 'BRL'
+      currency: config.currency
     }).format(value);
   };
 
@@ -595,7 +621,7 @@ const Index = () => {
         );
 
       case 'settings':
-        return <Settings user={user} />;
+        return <Settings user={user} currency={currency} onCurrencyChange={setCurrency} />;
 
       case 'notifications':
         return (

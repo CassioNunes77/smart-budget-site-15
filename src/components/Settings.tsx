@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Palette, Info, Shield, HelpCircle } from 'lucide-react';
 
 interface User {
@@ -13,9 +14,18 @@ interface User {
 
 interface SettingsProps {
   user: User | null;
+  currency: string;
+  onCurrencyChange: (currency: string) => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ user }) => {
+const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange }) => {
+  const currencyOptions = [
+    { value: 'BRL', label: 'Real Brasileiro (BRL)' },
+    { value: 'USD', label: 'Dólar Americano (USD)' },
+    { value: 'EUR', label: 'Euro (EUR)' },
+    { value: 'BTC', label: 'Bitcoin (BTC)' }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -67,9 +77,20 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
               <p className="text-foreground">Sistema (Auto)</p>
             </div>
             <Separator />
-            <div>
+            <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Moeda</label>
-              <p className="text-foreground">Real Brasileiro (BRL)</p>
+              <Select value={currency} onValueChange={onCurrencyChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencyOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Separator />
             <div>
@@ -90,7 +111,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Versão</label>
-              <p className="text-foreground">v0.1.8</p>
+              <p className="text-foreground">v0.2.0 Alpha</p>
             </div>
             <Separator />
             <div>

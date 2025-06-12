@@ -28,7 +28,7 @@ interface Transaction {
 
 interface TransactionModalProps {
   onClose: () => void;
-  onSave: (transaction: Omit<Transaction, 'id'>) => void;
+  onSave: (transaction: Omit<Transaction, 'id'> | Transaction) => void;
   editingTransaction?: Transaction | null;
   categories: string[];
 }
@@ -50,7 +50,10 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [recurringEndDate, setRecurringEndDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
+    console.log('TransactionModal useEffect triggered', { editingTransaction });
+    
     if (editingTransaction) {
+      console.log('Setting form data from editing transaction:', editingTransaction);
       setType(editingTransaction.type);
       setAmount(editingTransaction.amount.toString());
       setDescription(editingTransaction.description);
@@ -65,6 +68,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
         setRecurringEndDate(undefined);
       }
     } else {
+      console.log('Resetting form for new transaction');
       setType('expense');
       setAmount('');
       setDescription('');
@@ -80,13 +84,21 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form submission triggered', {
+      amount,
+      description,
+      category,
+      editingTransaction
+    });
+    
     if (!amount || !description || parseFloat(amount) <= 0) {
+      console.log('Form validation failed');
       return;
     }
 
     const finalCategory = category || 'Sem categoria';
 
-    const transactionData: Omit<Transaction, 'id'> = {
+    const transactionData = {
       type,
       amount: parseFloat(amount),
       description,
@@ -98,7 +110,15 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       recurringEndDate: isRecurring && recurringEndDate ? format(recurringEndDate, 'yyyy-MM') : undefined
     };
 
-    onSave(transactionData);
+    console.log('Transaction data to save:', transactionData);
+
+    if (editingTransaction) {
+      // Para edição, incluir o ID
+      onSave({ ...transactionData, id: editingTransaction.id });
+    } else {
+      // Para nova transação, não incluir ID
+      onSave(transactionData);
+    }
   };
 
   const availableCategories = categories.includes('Sem categoria') 
