@@ -64,7 +64,7 @@ const Dashboard: React.FC = () => {
   // Initialize theme
   useTheme();
   
-  const { user: firebaseUser, loading: firebaseLoading, handleLogout: firebaseLogout } = useFirebaseAuth();
+  const { user: firebaseUser, loading: firebaseLoading, handleLogout: firebaseLogout, error: firebaseError } = useFirebaseAuth();
   
   const [user, setUser] = useLocalStorage<User | null>('financial_user', null);
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>('financial_transactions', []);
@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
     'Outros'
   ]);
   const [currency, setCurrency] = useLocalStorage<string>('financial_currency', 'BRL');
-  const [showAuthModal, setShowAuthModal] = useState(!user);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -91,6 +91,54 @@ const Dashboard: React.FC = () => {
   
   // Ref para controlar se já mostrou o toast de login
   const hasShownLoginToast = useRef(false);
+  const isInitialized = useRef(false);
+
+  // Effect para sincronizar o usuário do Firebase com o estado local
+  useEffect(() => {
+    if (firebaseLoading) {
+      console.log('Firebase ainda carregando...');
+      return;
+    }
+
+    console.log('Firebase loading concluído, user:', firebaseUser?.email || 'No user');
+
+    if (firebaseUser && !hasShownLoginToast.current) {
+      console.log('Usuário logado detectado, sincronizando...');
+      
+      const userData: User = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'Usuário Google',
+        email: firebaseUser.email || '',
+        photoURL: firebaseUser.photoURL || undefined
+      };
+      
+      setUser(userData);
+      setShowAuthModal(false);
+      setCurrentPage('dashboard');
+      
+      // Mostrar toast apenas uma vez
+      if (!hasShownLoginToast.current) {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
+        });
+        hasShownLoginToast.current = true;
+      }
+      
+      isInitialized.current = true;
+      
+    } else if (!firebaseUser && isInitialized.current) {
+      console.log('Usuário deslogado, limpando estado...');
+      setUser(null);
+      setShowAuthModal(true);
+      hasShownLoginToast.current = false;
+      isInitialized.current = false;
+    } else if (!firebaseUser && !isInitialized.current) {
+      console.log('Nenhum usuário logado, mostrando modal de auth...');
+      setShowAuthModal(true);
+      isInitialized.current = true;
+    }
+  }, [firebaseUser, firebaseLoading, setUser]);
 
   // Calcular totais separando por status
   const getFinancialSummary = () => {
@@ -169,6 +217,7 @@ const Dashboard: React.FC = () => {
       setTransactions([]);
       setShowAuthModal(true);
       hasShownLoginToast.current = false;
+      isInitialized.current = false;
       toast({
         title: "Logout realizado",
         description: "Até logo!",
@@ -180,6 +229,7 @@ const Dashboard: React.FC = () => {
       setTransactions([]);
       setShowAuthModal(true);
       hasShownLoginToast.current = false;
+      isInitialized.current = false;
       toast({
         title: "Logout realizado",
         description: "Até logo!",
@@ -248,7 +298,7 @@ const Dashboard: React.FC = () => {
       setTransactions([newTransaction, ...transactions]);
       toast({
         title: "Transação adicionada!",
-        description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de ${formatCurrency(transaction.amount)} registrada.`,
+        description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de ${formatCurrency(transaction.amount, currency)} registrada.`,
       });
     }
     setShowTransactionModal(false);
@@ -308,7 +358,7 @@ const Dashboard: React.FC = () => {
   };
 
   // Mostrar loading enquanto verifica autenticação do Firebase
-  if (firebaseLoading) {
+  if (firebaseLoading && !isInitialized.current) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -319,6 +369,11 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // Mostrar erro do Firebase se houver
+  if (firebaseError) {
+    console.error('Erro do Firebase:', firebaseError);
   }
 
   if (showAuthModal && !firebaseUser) {
@@ -407,7 +462,7 @@ const Dashboard: React.FC = () => {
                   <TrendingUp className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedIncome)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedIncome, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">Valores recebidos</p>
                 </CardContent>
               </Card>
@@ -418,7 +473,7 @@ const Dashboard: React.FC = () => {
                   <Clock className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingIncome)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingIncome, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">A receber</p>
                 </CardContent>
               </Card>
@@ -429,7 +484,7 @@ const Dashboard: React.FC = () => {
                   <TrendingDown className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedExpenses)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedExpenses, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">Valores pagos</p>
                 </CardContent>
               </Card>
@@ -440,7 +495,7 @@ const Dashboard: React.FC = () => {
                   <Clock className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingExpenses)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingExpenses, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">A pagar</p>
                 </CardContent>
               </Card>
@@ -465,7 +520,7 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {showBalance ? formatCurrency(financialSummary.consolidatedBalance) : '••••••'}
+                    {showBalance ? formatCurrency(financialSummary.consolidatedBalance, currency) : '••••••'}
                   </div>
                   <p className="text-xs opacity-80 mt-1">Apenas valores confirmados</p>
                 </CardContent>
@@ -478,7 +533,7 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {showBalance ? formatCurrency(financialSummary.totalBalance) : '••••••'}
+                    {showBalance ? formatCurrency(financialSummary.totalBalance, currency) : '••••••'}
                   </div>
                   <p className="text-xs opacity-80 mt-1">Incluindo valores pendentes</p>
                 </CardContent>
@@ -572,17 +627,17 @@ const Dashboard: React.FC = () => {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Receitas Consolidadas:</span>
-                      <span className="font-semibold text-emerald-600">{formatCurrency(financialSummary.consolidatedIncome)}</span>
+                      <span className="font-semibold text-emerald-600">{formatCurrency(financialSummary.consolidatedIncome, currency)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Despesas Consolidadas:</span>
-                      <span className="font-semibold text-red-600">{formatCurrency(financialSummary.consolidatedExpenses)}</span>
+                      <span className="font-semibold text-red-600">{formatCurrency(financialSummary.consolidatedExpenses, currency)}</span>
                     </div>
                     <hr />
                     <div className="flex justify-between items-center">
                       <span className="text-foreground font-medium">Saldo Consolidado:</span>
                       <span className={`font-bold text-xl ${financialSummary.consolidatedBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {formatCurrency(financialSummary.consolidatedBalance)}
+                        {formatCurrency(financialSummary.consolidatedBalance, currency)}
                       </span>
                     </div>
                   </div>
@@ -597,17 +652,17 @@ const Dashboard: React.FC = () => {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Receitas a Receber:</span>
-                      <span className="font-semibold text-emerald-400">{formatCurrency(financialSummary.pendingIncome)}</span>
+                      <span className="font-semibold text-emerald-400">{formatCurrency(financialSummary.pendingIncome, currency)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Despesas a Pagar:</span>
-                      <span className="font-semibold text-red-400">{formatCurrency(financialSummary.pendingExpenses)}</span>
+                      <span className="font-semibold text-red-400">{formatCurrency(financialSummary.pendingExpenses, currency)}</span>
                     </div>
                     <hr />
                     <div className="flex justify-between items-center">
                       <span className="text-foreground font-medium">Saldo Projetado:</span>
                       <span className={`font-bold text-xl ${financialSummary.totalBalance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
-                        {formatCurrency(financialSummary.totalBalance)}
+                        {formatCurrency(financialSummary.totalBalance, currency)}
                       </span>
                     </div>
                   </div>
@@ -626,7 +681,7 @@ const Dashboard: React.FC = () => {
             categories={categories} 
             onUpdateCategories={setCategories}
             onCategoryDeleted={handleCategoryDeleted}
-            userId={user.id}
+            userId={user?.id || 'default'}
           />
         );
 

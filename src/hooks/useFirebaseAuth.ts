@@ -10,36 +10,71 @@ export const useFirebaseAuth = () => {
 
   useEffect(() => {
     console.log('Inicializando auth state listener...');
-    const unsubscribe = onAuthStateChange((user) => {
-      console.log('Auth state changed:', user?.email || 'No user');
-      setUser(user);
-      setLoading(false);
+    
+    const unsubscribe = onAuthStateChange((firebaseUser) => {
+      console.log('Auth state changed:', firebaseUser?.email || 'No user');
+      
+      try {
+        setUser(firebaseUser);
+        setError(null);
+        
+        // Garante que o loading seja definido como false após processar o usuário
+        setTimeout(() => {
+          setLoading(false);
+        }, 100);
+        
+      } catch (err) {
+        console.error('Erro ao processar mudança de estado de auth:', err);
+        setError('Erro interno de autenticação');
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('Limpando auth state listener...');
+      unsubscribe();
+    };
   }, []);
 
   const handleGoogleLogin = async () => {
     try {
       setError(null);
-      setLoading(true);
       console.log('Tentando fazer login com Google...');
-      await signInWithGoogle();
+      
+      const result = await signInWithGoogle();
+      console.log('Login concluído com sucesso:', result?.email);
+      
+      // Não precisamos definir o user aqui, pois o onAuthStateChange vai fazer isso
+      return result;
+      
     } catch (error: any) {
       console.error('Erro no login:', error);
-      setError(error.message || 'Erro no login com Google');
-    } finally {
-      setLoading(false);
+      
+      let errorMessage = 'Erro no login com Google';
+      
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'Domínio não autorizado. Configure o domínio no Firebase Console.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Login cancelado pelo usuário';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup bloqueado pelo navegador. Permita popups para este site.';
+      }
+      
+      setError(errorMessage);
+      throw error;
     }
   };
 
   const handleLogout = async () => {
     try {
       setError(null);
+      console.log('Fazendo logout...');
       await logout();
+      // O onAuthStateChange vai limpar o user automaticamente
     } catch (error: any) {
       console.error('Erro no logout:', error);
       setError(error.message || 'Erro no logout');
+      throw error;
     }
   };
 
