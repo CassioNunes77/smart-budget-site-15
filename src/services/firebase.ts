@@ -16,15 +16,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Google provider
+// Google provider com configurações adicionais
 const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
 
 export const signInWithGoogle = async () => {
   try {
+    console.log('Iniciando login com Google...');
+    console.log('Auth domain:', firebaseConfig.authDomain);
+    console.log('Project ID:', firebaseConfig.projectId);
+    
     const result = await signInWithPopup(auth, googleProvider);
+    console.log('Login bem-sucedido:', result.user);
     return result.user;
-  } catch (error) {
-    console.error('Erro no login com Google:', error);
+  } catch (error: any) {
+    console.error('Erro detalhado no login com Google:', error);
+    console.error('Código do erro:', error.code);
+    console.error('Mensagem do erro:', error.message);
+    
+    if (error.code === 'auth/configuration-not-found') {
+      throw new Error('Configuração do Firebase Authentication não encontrada. Verifique se o Authentication está habilitado no Console do Firebase.');
+    } else if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error('Login cancelado pelo usuário');
+    } else if (error.code === 'auth/popup-blocked') {
+      throw new Error('Popup bloqueado pelo navegador. Permita popups para este site.');
+    }
+    
     throw error;
   }
 };
@@ -32,6 +50,7 @@ export const signInWithGoogle = async () => {
 export const logout = async () => {
   try {
     await signOut(auth);
+    console.log('Logout realizado com sucesso');
   } catch (error) {
     console.error('Erro no logout:', error);
     throw error;

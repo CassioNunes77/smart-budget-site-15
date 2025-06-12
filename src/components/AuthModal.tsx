@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn, DollarSign } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LogIn, DollarSign, AlertCircle } from 'lucide-react';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 
 interface User {
@@ -22,7 +23,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { handleGoogleLogin } = useFirebaseAuth();
+  const { handleGoogleLogin, error } = useFirebaseAuth();
 
   const handleManualLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,10 +47,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
     setIsLoading(true);
     try {
       await handleGoogleLogin();
-      // O onAuthStateChange do useFirebaseAuth vai cuidar da atualização do estado
+      console.log('Login iniciado, aguardando callback do Firebase...');
     } catch (error) {
-      console.error('Erro no login com Google:', error);
-      alert('Erro no login com Google. Tente novamente.');
+      console.error('Erro capturado no componente:', error);
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +83,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {error && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-700">
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button 
             onClick={handleFirebaseGoogleLogin} 
             disabled={isLoading}
