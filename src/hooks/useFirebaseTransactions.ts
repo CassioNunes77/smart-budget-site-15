@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   getUserTransactions, 
@@ -60,16 +59,28 @@ export const useFirebaseTransactions = () => {
   // Adicionar transação
   const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
-      console.log('Adicionando nova transação:', transactionData);
+      console.log('useFirebaseTransactions: Iniciando adição de transação');
+      console.log('Dados recebidos:', transactionData);
+      console.log('Usuário atual:', user?.uid);
+      
+      if (!user) {
+        console.error('Usuário não está autenticado no hook');
+        throw new Error('Usuário não autenticado');
+      }
+      
       const newId = await addTransactionService(transactionData);
+      console.log('Transação adicionada com ID:', newId);
       
       // Atualizar estado local imediatamente
       const newTransaction = { ...transactionData, id: newId };
-      setTransactions(prev => [newTransaction, ...prev]);
+      setTransactions(prev => {
+        console.log('Atualizando estado local com nova transação');
+        return [newTransaction, ...prev];
+      });
       
       return newId;
     } catch (err) {
-      console.error('Erro ao adicionar transação:', err);
+      console.error('Erro no hook ao adicionar transação:', err);
       throw err;
     }
   };

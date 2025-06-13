@@ -1,4 +1,3 @@
-
 import firestoreService from './firestoreService';
 import { auth } from './firebase';
 
@@ -19,14 +18,32 @@ export interface Transaction {
 // Adicionar nova transação
 export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>): Promise<string> => {
   const user = auth.currentUser;
-  if (!user) throw new Error("Usuário não autenticado");
+  console.log('Estado do usuário:', user?.uid, user?.email);
+  
+  if (!user) {
+    console.error('Usuário não encontrado no auth.currentUser');
+    throw new Error("Usuário não autenticado");
+  }
 
-  console.log('Adicionando transação:', transactionData);
+  console.log('Dados da transação a ser salva:', transactionData);
+  console.log('User ID:', user.uid);
 
-  return firestoreService.saveDocument('transactions', {
-    ...transactionData,
-    userId: user.uid
-  });
+  try {
+    const transactionWithUserId = {
+      ...transactionData,
+      userId: user.uid
+    };
+    
+    console.log('Transação completa:', transactionWithUserId);
+    
+    const docId = await firestoreService.saveDocument('transactions', transactionWithUserId);
+    console.log('Transação salva com sucesso. ID:', docId);
+    
+    return docId;
+  } catch (error) {
+    console.error('Erro detalhado ao salvar transação:', error);
+    throw error;
+  }
 };
 
 // Buscar transações do usuário
