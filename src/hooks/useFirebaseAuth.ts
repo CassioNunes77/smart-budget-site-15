@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { auth, signInWithGoogle, logout, onAuthStateChange } from '@/services/firebase';
+import { auth, signInWithGoogle, logout, onAuthStateChange, createUserDocument } from '@/services/firebase';
 
 export const useFirebaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -11,17 +11,19 @@ export const useFirebaseAuth = () => {
   useEffect(() => {
     console.log('Inicializando auth state listener...');
     
-    const unsubscribe = onAuthStateChange((firebaseUser) => {
+    const unsubscribe = onAuthStateChange(async (firebaseUser) => {
       console.log('Auth state changed:', firebaseUser?.email || 'No user');
       
       try {
         setUser(firebaseUser);
         setError(null);
         
-        // Garante que o loading seja definido como false após processar o usuário
-        setTimeout(() => {
-          setLoading(false);
-        }, 100);
+        // Se o usuário acabou de fazer login, criar documento no Firestore
+        if (firebaseUser) {
+          await createUserDocument(firebaseUser);
+        }
+        
+        setLoading(false);
         
       } catch (err) {
         console.error('Erro ao processar mudança de estado de auth:', err);

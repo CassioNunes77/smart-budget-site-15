@@ -1,6 +1,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpzdJHLP2QXQfnIuvUxOXe2u8l2oysOOs",
@@ -15,11 +16,37 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 // Google provider com configurações adicionais
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
+
+export const createUserDocument = async (user: User) => {
+  try {
+    const userDocRef = doc(db, 'users', user.uid);
+    
+    // Verificar se o documento já existe
+    const userDoc = await getDoc(userDocRef);
+    
+    if (!userDoc.exists()) {
+      // Criar o documento apenas se não existir
+      await setDoc(userDocRef, {
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        createdAt: serverTimestamp()
+      });
+      
+      console.log('Documento do usuário criado com sucesso:', user.uid);
+    } else {
+      console.log('Documento do usuário já existe:', user.uid);
+    }
+  } catch (error) {
+    console.error('Erro ao criar documento do usuário:', error);
+  }
+};
 
 export const signInWithGoogle = async () => {
   try {
