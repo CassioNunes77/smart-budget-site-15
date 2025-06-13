@@ -98,17 +98,23 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
     const finalCategory = category || 'Sem categoria';
 
-    const transactionData = {
+    const transactionData: any = {
       type,
       amount: parseFloat(amount),
       description,
       category: finalCategory,
       date,
       status,
-      isRecurring,
-      recurringFrequency: isRecurring ? recurringFrequency : undefined,
-      recurringEndDate: isRecurring && recurringEndDate ? format(recurringEndDate, 'yyyy-MM') : undefined
+      isRecurring
     };
+
+    // Só incluir campos de recorrência se a transação for recorrente
+    if (isRecurring) {
+      transactionData.recurringFrequency = recurringFrequency;
+      if (recurringEndDate) {
+        transactionData.recurringEndDate = format(recurringEndDate, 'yyyy-MM');
+      }
+    }
 
     console.log('Transaction data to save:', transactionData);
 
