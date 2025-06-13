@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import {
   Calendar,
   PieChart,
   BarChart3,
-  Settings,
+  Settings as SettingsIcon,
   LogOut,
   User,
   Download,
@@ -24,7 +25,7 @@ import TransactionModal from '@/components/TransactionModal';
 import TransactionsList from '@/components/TransactionsList';
 import FinancialCharts from '@/components/FinancialCharts';
 import CategoryManager from '@/components/CategoryManager';
-import Settings from '@/components/Settings';
+import SettingsComponent from '@/components/Settings';
 import UserProfile from '@/components/UserProfile';
 import DownloadManager from '@/components/DownloadManager';
 import CsvUpload from '@/components/CsvUpload';
@@ -33,19 +34,7 @@ import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
-
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  category: string;
-  date: string;
-  status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
-  isRecurring?: boolean;
-  recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
-  recurringEndDate?: string;
-}
+import { Transaction } from '@/services/transactionService';
 
 interface MonthlyData {
   month: string;
@@ -128,7 +117,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { theme, toggleTheme } = useTheme();
 
-  const handleAddTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
+  const handleAddTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     try {
       await addTransaction(transactionData);
       setIsTransactionModalOpen(false);
@@ -163,7 +152,7 @@ const Index = () => {
     }
   };
 
-  const handleSaveTransaction = (transactionData: Omit<Transaction, 'id'> | Transaction) => {
+  const handleSaveTransaction = (transactionData: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'> | Transaction) => {
     if ('id' in transactionData) {
       handleEditTransaction(transactionData);
     } else {
@@ -186,7 +175,7 @@ const Index = () => {
     setCategories(categories.filter(cat => cat !== categoryToRemove));
   };
 
-  const handleCsvUpload = async (transactions: Omit<Transaction, 'id'>[]) => {
+  const handleCsvUpload = async (transactions: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>[]) => {
     try {
       for (const transaction of transactions) {
         await addTransaction(transaction);
@@ -248,7 +237,7 @@ const Index = () => {
             Perfil
           </Button>
           <Button variant="ghost" className="justify-start" onClick={() => setActiveTab('settings')}>
-            <Settings className="w-4 h-4 mr-2" />
+            <SettingsIcon className="w-4 h-4 mr-2" />
             Configurações
           </Button>
           <Button variant="ghost" className="justify-start" onClick={() => setActiveTab('download')}>
@@ -386,15 +375,27 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="profile">
-              <UserProfile user={user} />
+              <UserProfile 
+                user={{
+                  id: user.uid,
+                  name: user.displayName || '',
+                  email: user.email || ''
+                }} 
+              />
             </TabsContent>
 
             <TabsContent value="settings">
-              <Settings theme={theme} toggleTheme={toggleTheme} />
+              <SettingsComponent theme={theme} toggleTheme={toggleTheme} />
             </TabsContent>
 
             <TabsContent value="download">
-              <DownloadManager transactions={transactions} />
+              <DownloadManager 
+                transactions={transactions} 
+                user={{
+                  name: user.displayName || '',
+                  email: user.email || ''
+                }}
+              />
             </TabsContent>
           </Tabs>
         </div>
