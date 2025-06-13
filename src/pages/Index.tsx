@@ -18,6 +18,9 @@ import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useFirebaseTransactions } from '@/hooks/useFirebaseTransactions';
+import { useFirebaseCategories } from '@/hooks/useFirebaseCategories';
+import { migrateLocalData } from '@/services/migrationService';
 import CsvUpload from '@/components/CsvUpload';
 
 interface Transaction {
@@ -66,18 +69,24 @@ const Dashboard: React.FC = () => {
   
   const { user: firebaseUser, loading: firebaseLoading, handleLogout: firebaseLogout, error: firebaseError } = useFirebaseAuth();
   
+  // Usar hooks do Firebase para dados persistentes
+  const { 
+    transactions, 
+    loading: transactionsLoading, 
+    addTransaction: addFirebaseTransaction,
+    updateTransaction: updateFirebaseTransaction,
+    deleteTransaction: deleteFirebaseTransaction,
+    updateTransactionStatus: updateFirebaseTransactionStatus
+  } = useFirebaseTransactions();
+  
+  const { 
+    categories, 
+    loading: categoriesLoading,
+    updateCategories: updateFirebaseCategories 
+  } = useFirebaseCategories();
+  
+  // Estados locais para interface
   const [user, setUser] = useLocalStorage<User | null>('financial_user', null);
-  const [transactions, setTransactions] = useLocalStorage<Transaction[]>('financial_transactions', []);
-  const [categories, setCategories] = useLocalStorage<string[]>('financial_categories', [
-    'Sem categoria',
-    'Alimentação',
-    'Transporte',
-    'Moradia',
-    'Saúde',
-    'Educação',
-    'Lazer',
-    'Outros'
-  ]);
   const [currency, setCurrency] = useLocalStorage<string>('financial_currency', 'BRL');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -88,10 +97,12 @@ const Dashboard: React.FC = () => {
   const [notificationSettings, setNotificationSettings] = useLocalStorage('notification_settings', {
     billReminders: true
   });
+  const [migrationInProgress, setMigrationInProgress] = useState(false);
   
   // Ref para controlar se já mostrou o toast de login
   const hasShownLoginToast = useRef(false);
   const isInitialized = useRef(false);
+  const migrationAttempted = useRef(false);
 
   // Effect para sincronizar o usuário do Firebase com o estado local
   useEffect(() => {
@@ -116,6 +127,12 @@ const Dashboard: React.FC = () => {
       setShowAuthModal(false);
       setCurrentPage('dashboard');
       
+      // Executar migração automática apenas uma vez
+      if (!migrationAttempted.current) {
+        migrationAttempted.current = true;
+        performMigration();
+      }
+      
       // Mostrar toast apenas uma vez
       if (!hasShownLoginToast.current) {
         toast({
@@ -133,12 +150,28 @@ const Dashboard: React.FC = () => {
       setShowAuthModal(true);
       hasShownLoginToast.current = false;
       isInitialized.current = false;
+      migrationAttempted.current = false;
     } else if (!firebaseUser && !isInitialized.current) {
       console.log('Nenhum usuário logado, mostrando modal de auth...');
       setShowAuthModal(true);
       isInitialized.current = true;
     }
   }, [firebaseUser, firebaseLoading, setUser]);
+
+  // Função para executar migração
+  const performMigration = async () => {
+    try {
+      setMigrationInProgress(true);
+      console.log('Iniciando migração de dados...');
+      await migrateLocalData();
+      console.log('Migração concluída com sucesso');
+    } catch (error) {
+      console.error('Erro na migração:', error);
+      // Não mostrar erro para o usuário, apenas log
+    } finally {
+      setMigrationInProgress(false);
+    }
+  };
 
   // Calcular totais separando por status
   const getFinancialSummary = () => {
@@ -172,31 +205,6 @@ const Dashboard: React.FC = () => {
 
   const financialSummary = getFinancialSummary();
 
-  // Effect para sincronizar o usuário do Firebase com o estado local
-  useEffect(() => {
-    if (firebaseUser && !hasShownLoginToast.current) {
-      const userData: User = {
-        id: firebaseUser.uid,
-        name: firebaseUser.displayName || 'Usuário Google',
-        email: firebaseUser.email || '',
-        photoURL: firebaseUser.photoURL || undefined
-      };
-      setUser(userData);
-      setShowAuthModal(false);
-      setCurrentPage('dashboard');
-      
-      // Mostrar toast apenas uma vez
-      toast({
-        title: "Login realizado com sucesso!",
-        description: `Bem-vindo ao Fluxo Fácil, ${userData.name}!`,
-      });
-      hasShownLoginToast.current = true;
-    } else if (!firebaseLoading && !user && !firebaseUser) {
-      setShowAuthModal(true);
-      hasShownLoginToast.current = false;
-    }
-  }, [firebaseUser, firebaseLoading, setUser, user]);
-
   const handleLogin = (userData: User) => {
     setUser(userData);
     setShowAuthModal(false);
@@ -214,10 +222,10 @@ const Dashboard: React.FC = () => {
     try {
       await firebaseLogout();
       setUser(null);
-      setTransactions([]);
       setShowAuthModal(true);
       hasShownLoginToast.current = false;
       isInitialized.current = false;
+      migrationAttempted.current = false;
       toast({
         title: "Logout realizado",
         description: "Até logo!",
@@ -226,10 +234,10 @@ const Dashboard: React.FC = () => {
       console.error('Erro no logout:', error);
       // Fallback para logout manual se o Firebase falhar
       setUser(null);
-      setTransactions([]);
       setShowAuthModal(true);
       hasShownLoginToast.current = false;
       isInitialized.current = false;
+      migrationAttempted.current = false;
       toast({
         title: "Logout realizado",
         description: "Até logo!",
@@ -243,27 +251,33 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateTransactionStatus = (id: string, status: 'paid' | 'unpaid' | 'received' | 'unreceived') => {
-    setTransactions(transactions.map(t => 
-      t.id === id ? { ...t, status } : t
-    ));
-    toast({
-      title: "Status atualizado!",
-      description: "O status da transação foi alterado.",
-    });
+  const handleUpdateTransactionStatus = async (id: string, status: 'paid' | 'unpaid' | 'received' | 'unreceived') => {
+    try {
+      await updateFirebaseTransactionStatus(id, status);
+      toast({
+        title: "Status atualizado!",
+        description: "O status da transação foi alterado.",
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status da transação.",
+        variant: "destructive"
+      });
+    }
   };
 
   const createRecurringTransactions = (baseTransaction: Omit<Transaction, 'id'>, endDate: string) => {
-    const transactions: Transaction[] = [];
+    const transactions: Omit<Transaction, 'id'>[] = [];
     const startDate = new Date(baseTransaction.date);
     const finalDate = new Date(endDate + '-01');
     
     let currentDate = new Date(startDate);
     
     while (currentDate <= finalDate) {
-      const newTransaction: Transaction = {
+      const newTransaction: Omit<Transaction, 'id'> = {
         ...baseTransaction,
-        id: `${Date.now()}-${Math.random()}`,
         date: currentDate.toISOString().split('T')[0],
       };
       
@@ -282,44 +296,72 @@ const Dashboard: React.FC = () => {
     return transactions;
   };
 
-  const handleAddTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    if (transaction.isRecurring && transaction.recurringEndDate) {
-      const recurringTransactions = createRecurringTransactions(transaction, transaction.recurringEndDate);
-      setTransactions([...recurringTransactions, ...transactions]);
+  const handleAddTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+    try {
+      if (transaction.isRecurring && transaction.recurringEndDate) {
+        const recurringTransactions = createRecurringTransactions(transaction, transaction.recurringEndDate);
+        
+        // Adicionar todas as transações recorrentes
+        for (const recurringTransaction of recurringTransactions) {
+          await addFirebaseTransaction(recurringTransaction);
+        }
+        
+        toast({
+          title: "Transações recorrentes criadas!",
+          description: `${recurringTransactions.length} transações foram adicionadas.`,
+        });
+      } else {
+        await addFirebaseTransaction(transaction);
+        toast({
+          title: "Transação adicionada!",
+          description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de ${formatCurrency(transaction.amount, currency)} registrada.`,
+        });
+      }
+      setShowTransactionModal(false);
+    } catch (error) {
+      console.error('Erro ao adicionar transação:', error);
       toast({
-        title: "Transações recorrentes criadas!",
-        description: `${recurringTransactions.length} transações foram adicionadas.`,
-      });
-    } else {
-      const newTransaction = {
-        ...transaction,
-        id: Date.now().toString(),
-      };
-      setTransactions([newTransaction, ...transactions]);
-      toast({
-        title: "Transação adicionada!",
-        description: `${transaction.type === 'income' ? 'Receita' : 'Despesa'} de ${formatCurrency(transaction.amount, currency)} registrada.`,
+        title: "Erro",
+        description: "Não foi possível adicionar a transação.",
+        variant: "destructive"
       });
     }
-    setShowTransactionModal(false);
   };
 
-  const handleEditTransaction = (transaction: Transaction) => {
-    setTransactions(transactions.map(t => t.id === transaction.id ? transaction : t));
-    setEditingTransaction(null);
-    setShowTransactionModal(false);
-    toast({
-      title: "Transação atualizada!",
-      description: "As alterações foram salvas com sucesso.",
-    });
+  const handleEditTransaction = async (transaction: Transaction) => {
+    try {
+      await updateFirebaseTransaction(transaction.id, transaction);
+      setEditingTransaction(null);
+      setShowTransactionModal(false);
+      toast({
+        title: "Transação atualizada!",
+        description: "As alterações foram salvas com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar transação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a transação.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions(transactions.filter(t => t.id !== id));
-    toast({
-      title: "Transação removida",
-      description: "A transação foi excluída com sucesso.",
-    });
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await deleteFirebaseTransaction(id);
+      toast({
+        title: "Transação removida",
+        description: "A transação foi excluída com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao excluir transação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a transação.",
+        variant: "destructive"
+      });
+    }
   };
 
   const openEditModal = (transaction: Transaction) => {
@@ -327,12 +369,23 @@ const Dashboard: React.FC = () => {
     setShowTransactionModal(true);
   };
 
-  const handleImportTransactions = (importedTransactions: Transaction[]) => {
-    setTransactions(prev => [...prev, ...importedTransactions]);
-    toast({
-      title: "Transações importadas!",
-      description: `${importedTransactions.length} transações foram adicionadas com sucesso.`,
-    });
+  const handleImportTransactions = async (importedTransactions: Transaction[]) => {
+    try {
+      for (const transaction of importedTransactions) {
+        await addFirebaseTransaction(transaction);
+      }
+      toast({
+        title: "Transações importadas!",
+        description: `${importedTransactions.length} transações foram adicionadas com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Erro ao importar transações:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível importar todas as transações.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getGreeting = () => {
@@ -357,15 +410,17 @@ const Dashboard: React.FC = () => {
     reader.readAsText(file);
   };
 
-  // Mostrar loading enquanto verifica autenticação do Firebase
-  if (firebaseLoading && !isInitialized.current) {
+  // Mostrar loading enquanto verifica autenticação do Firebase ou migração
+  if ((firebaseLoading && !isInitialized.current) || migrationInProgress || transactionsLoading || categoriesLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <DollarSign className="w-8 h-8 text-primary animate-pulse" />
           </div>
-          <p className="text-muted-foreground">Carregando...</p>
+          <p className="text-muted-foreground">
+            {migrationInProgress ? 'Sincronizando dados...' : 'Carregando...'}
+          </p>
         </div>
       </div>
     );
@@ -380,18 +435,22 @@ const Dashboard: React.FC = () => {
     return <AuthModal onLogin={handleLogin} />;
   }
 
-  const handleUpdateCategories = (newCategories: string[]) => {
-    setCategories(newCategories);
+  const handleUpdateCategories = async (newCategories: string[]) => {
+    try {
+      await updateFirebaseCategories(newCategories);
+    } catch (error) {
+      console.error('Erro ao atualizar categorias:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar as categorias.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCategoryDeleted = (deletedCategory: string) => {
-    // Atualizar todas as transações que usam a categoria deletada para "Sem categoria"
-    const updatedTransactions = transactions.map(transaction => 
-      transaction.category === deletedCategory 
-        ? { ...transaction, category: 'Sem categoria' }
-        : transaction
-    );
-    setTransactions(updatedTransactions);
+    // A atualização das transações será feita automaticamente pelo hook
+    console.log(`Categoria ${deletedCategory} foi deletada`);
   };
 
   const toggleNotificationSetting = (setting: string) => {
@@ -679,7 +738,7 @@ const Dashboard: React.FC = () => {
         return (
           <CategoryManager 
             categories={categories} 
-            onUpdateCategories={setCategories}
+            onUpdateCategories={handleUpdateCategories}
             onCategoryDeleted={handleCategoryDeleted}
             userId={user?.id || 'default'}
           />
