@@ -190,6 +190,18 @@ const Index = () => {
     console.log('Atualizar usuário:', userData);
   };
 
+  const handleCategoryDeleted = (deletedCategory: string) => {
+    // Atualizar transações que usam a categoria deletada para "Sem categoria"
+    transactions.forEach(async (transaction) => {
+      if (transaction.category === deletedCategory) {
+        await updateTransaction({
+          ...transaction,
+          category: 'Sem categoria'
+        });
+      }
+    });
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -372,7 +384,10 @@ const Index = () => {
 
             <TabsContent value="categories">
               <CategoryManager 
-                categories={categories} 
+                categories={categories}
+                onUpdateCategories={setCategories}
+                onCategoryDeleted={handleCategoryDeleted}
+                userId={user.uid}
               />
             </TabsContent>
 
