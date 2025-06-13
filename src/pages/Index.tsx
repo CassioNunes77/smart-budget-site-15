@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -186,6 +185,11 @@ const Index = () => {
     }
   };
 
+  const handleUpdateUser = (userData: { name: string; email: string }) => {
+    // Implementar atualização do usuário se necessário
+    console.log('Atualizar usuário:', userData);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -369,8 +373,6 @@ const Index = () => {
             <TabsContent value="categories">
               <CategoryManager 
                 categories={categories} 
-                onAddCategory={handleAddCategory}
-                onRemoveCategory={handleRemoveCategory} 
               />
             </TabsContent>
 
@@ -380,12 +382,21 @@ const Index = () => {
                   id: user.uid,
                   name: user.displayName || '',
                   email: user.email || ''
-                }} 
+                }}
+                onUpdateUser={handleUpdateUser}
               />
             </TabsContent>
 
             <TabsContent value="settings">
-              <SettingsComponent theme={theme} toggleTheme={toggleTheme} />
+              <SettingsComponent 
+                user={{
+                  id: user.uid,
+                  name: user.displayName || '',
+                  email: user.email || ''
+                }}
+                currency="BRL"
+                onCurrencyChange={() => {}}
+              />
             </TabsContent>
 
             <TabsContent value="download">
