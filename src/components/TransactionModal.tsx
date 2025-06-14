@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,7 @@ import { X, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
 
 interface Transaction {
   id: string;
@@ -127,9 +127,16 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     }
   };
 
-  const availableCategories = categories.includes('Sem categoria') 
-    ? categories 
-    : ['Sem categoria', ...categories];
+  // Filtrar categorias ocultas para o dropdown
+  const availableCategories = categories.filter(cat => {
+    const categoryConfig = DEFAULT_CATEGORIES.find(config => config.name === cat);
+    return !categoryConfig?.hidden;
+  });
+
+  // Garantir que "Sem categoria" está disponível como fallback
+  const categoryOptions = availableCategories.includes('Sem categoria') 
+    ? availableCategories 
+    : ['Sem categoria', ...availableCategories];
 
   const getStatusBoolean = () => {
     if (type === 'expense') {
@@ -225,7 +232,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableCategories.map((cat) => (
+                  {categoryOptions.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>

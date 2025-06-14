@@ -7,6 +7,7 @@ import {
   removeCategory as removeCategoryService
 } from '@/services/categoryService';
 import { useFirebaseAuth } from './useFirebaseAuth';
+import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
 
 export const useFirebaseCategories = () => {
   const [categories, setCategories] = useState<string[]>([]);
@@ -29,22 +30,21 @@ export const useFirebaseCategories = () => {
         console.error('Erro ao carregar categorias:', err);
         setError('Erro ao carregar categorias');
         // Fallback para categorias padrão
-        setCategories([
-          'Sem categoria',
-          'Alimentação',
-          'Transporte',
-          'Moradia',
-          'Saúde',
-          'Educação',
-          'Lazer',
-          'Outros'
-        ]);
+        const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
+        setCategories(defaultCategoryNames);
       } finally {
         setLoading(false);
       }
     };
 
-    loadCategories();
+    if (user) {
+      loadCategories();
+    } else {
+      // Se não há usuário, usar categorias padrão
+      const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
+      setCategories(defaultCategoryNames);
+      setLoading(false);
+    }
   }, [user]);
 
   // Salvar todas as categorias

@@ -22,6 +22,7 @@ import { useFirebaseTransactions } from '@/hooks/useFirebaseTransactions';
 import { useFirebaseCategories } from '@/hooks/useFirebaseCategories';
 import { migrateLocalData } from '@/services/migrationService';
 import CsvUpload from '@/components/CsvUpload';
+import DashboardPeriodFilter, { PeriodType } from '@/components/DashboardPeriodFilter';
 
 interface Transaction {
   id: string;
@@ -99,6 +100,10 @@ const Dashboard: React.FC = () => {
   });
   const [migrationInProgress, setMigrationInProgress] = useState(false);
   
+  // Estado do filtro de período do Dashboard
+  const [dashboardPeriod, setDashboardPeriod] = useState<PeriodType>('month');
+  const [dashboardYear, setDashboardYear] = useState<number>(new Date().getFullYear());
+  
   // Ref para controlar se já mostrou o toast de login
   const hasShownLoginToast = useRef(false);
   const isInitialized = useRef(false);
@@ -173,21 +178,72 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Calcular totais separando por status
+  // Função para filtrar transações baseado no período do Dashboard
+  const getFilteredTransactions = () => {
+    const now = new Date();
+    
+    switch (dashboardPeriod) {
+      case 'week':
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay()); // Início da semana (domingo)
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6); // Fim da semana (sábado)
+        
+        return transactions.filter(t => {
+          const transactionDate = new Date(t.date);
+          return transactionDate >= weekStart && transactionDate <= weekEnd;
+        });
+        
+      case 'month':
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        return transactions.filter(t => {
+          const transactionDate = new Date(t.date);
+          return transactionDate >= monthStart && transactionDate <= monthEnd;
+        });
+        
+      case 'quarter':
+        const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        const quarterEnd = new Date(now.getFullYear(), quarterStart.getMonth() + 3, 0);
+        
+        return transactions.filter(t => {
+          const transactionDate = new Date(t.date);
+          return transactionDate >= quarterStart && transactionDate <= quarterEnd;
+        });
+        
+      case 'year':
+        const yearStart = new Date(dashboardYear, 0, 1);
+        const yearEnd = new Date(dashboardYear, 11, 31);
+        
+        return transactions.filter(t => {
+          const transactionDate = new Date(t.date);
+          return transactionDate >= yearStart && transactionDate <= yearEnd;
+        });
+        
+      case 'all':
+      default:
+        return transactions;
+    }
+  };
+
+  const filteredTransactions = getFilteredTransactions();
+
+  // Calcular totais separando por status usando transações filtradas
   const getFinancialSummary = () => {
-    const consolidatedIncome = transactions
+    const consolidatedIncome = filteredTransactions
       .filter(t => t.type === 'income' && (!t.status || t.status === 'received'))
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const pendingIncome = transactions
+    const pendingIncome = filteredTransactions
       .filter(t => t.type === 'income' && t.status === 'unreceived')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const consolidatedExpenses = transactions
+    const consolidatedExpenses = filteredTransactions
       .filter(t => t.type === 'expense' && (!t.status || t.status === 'paid'))
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const pendingExpenses = transactions
+    const pendingExpenses = filteredTransactions
       .filter(t => t.type === 'expense' && t.status === 'unpaid')
       .reduce((sum, t) => sum + t.amount, 0);
 
@@ -458,6 +514,15 @@ const Dashboard: React.FC = () => {
       ...prev,
       [setting]: !prev[setting]
     }));
+    
+    // Mostrar notificação sobre o status dos lembretes
+    if (setting === 'billReminders') {
+      const newValue = !notificationSettings[setting];
+      toast({
+        title: newValue ? "Lembretes ativados!" : "Lembretes desativados",
+        description: newValue ? "Você receberá notificações sobre contas a pagar." : "Você não receberá mais lembretes sobre contas.",
+      });
+    }
   };
 
   const renderPage = () => {
@@ -473,7 +538,15 @@ const Dashboard: React.FC = () => {
                 </h1>
                 <p className="text-muted-foreground mt-1">Aqui está um resumo das suas finanças</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <DashboardPeriodFilter
+                  selectedPeriod={dashboardPeriod}
+                  selectedYear={dashboardYear}
+                  onPeriodChange={(period, year) => {
+                    setDashboardPeriod(period);
+                    if (year) setDashboardYear(year);
+                  }}
+                />
                 <Button 
                   className="premium-button standard-button-height" 
                   size="sm"
@@ -600,7 +673,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Gráficos */}
-            <FinancialCharts transactions={transactions} />
+            <FinancialCharts transactions={filteredTransactions} />
 
             {/* Lista de Transações Recentes */}
             <Card className="shadow-lg">
@@ -609,13 +682,13 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <TransactionsList 
-                  transactions={transactions.slice(0, 5)}
+                  transactions={filteredTransactions.slice(0, 5)}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
                   categories={categories}
                 />
-                {transactions.length === 0 && (
+                {filteredTransactions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <DollarSign className="w-16 h-16 mx-auto mb-4 opacity-50" />
                     <p className="text-lg">Nenhuma transação encontrada</p>
