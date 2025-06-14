@@ -18,6 +18,7 @@ export interface Transaction {
 // Adicionar nova transação
 export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>): Promise<string> => {
   const user = auth.currentUser;
+  console.log('=== ADD TRANSACTION DEBUG ===');
   console.log('Estado do usuário:', user?.uid, user?.email);
   
   if (!user) {
@@ -34,10 +35,15 @@ export const addTransaction = async (transactionData: Omit<Transaction, 'id' | '
       userId: user.uid
     };
     
-    console.log('Transação completa:', transactionWithUserId);
+    console.log('Transação completa com userId:', transactionWithUserId);
     
     const docId = await firestoreService.saveDocument('transactions', transactionWithUserId);
-    console.log('Transação salva com sucesso. ID:', docId);
+    console.log('Transação salva com sucesso. ID do documento:', docId);
+    
+    // Teste imediato de leitura
+    console.log('=== TESTE DE LEITURA IMEDIATA ===');
+    const savedDoc = await firestoreService.getDocument('transactions', docId);
+    console.log('Documento salvo recuperado imediatamente:', savedDoc);
     
     return docId;
   } catch (error) {
@@ -49,14 +55,20 @@ export const addTransaction = async (transactionData: Omit<Transaction, 'id' | '
 // Buscar transações do usuário
 export const getUserTransactions = async (): Promise<Transaction[]> => {
   const user = auth.currentUser;
+  
+  console.log('=== GET USER TRANSACTIONS DEBUG ===');
+  console.log('Auth state check - user:', user?.uid, user?.email);
+  console.log('Auth currentUser existe?', !!user);
+  
   if (!user) {
     console.log('Usuário não autenticado, retornando array vazio');
     return [];
   }
 
-  console.log('Buscando transações para usuário:', user.uid);
+  console.log('Buscando transações para usuário ID:', user.uid);
 
   try {
+    console.log('Executando query no Firestore...');
     const transactions = await firestoreService.listDocuments(
       'transactions', 
       [['userId', '==', user.uid]],
@@ -64,11 +76,59 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
       'desc'
     );
     
-    console.log(`${transactions.length} transações encontradas`);
+    console.log(`Query executada com sucesso. ${transactions.length} transações encontradas`);
+    console.log('Primeiras 3 transações encontradas:', transactions.slice(0, 3));
+    console.log('UserIds das transações:', transactions.map(t => t.userId));
+    console.log('UserID atual:', user.uid);
+    
     return transactions as Transaction[];
   } catch (error) {
-    console.error('Erro ao buscar transações:', error);
+    console.error('Erro detalhado ao buscar transações:', error);
     return [];
+  }
+};
+
+// Função de teste para debug
+export const testFirestoreConnection = async (): Promise<void> => {
+  const user = auth.currentUser;
+  console.log('=== TESTE DE CONEXÃO FIRESTORE ===');
+  
+  if (!user) {
+    console.log('Usuário não autenticado para teste');
+    return;
+  }
+
+  try {
+    // Teste de gravação
+    const testData = {
+      test: 'connection-test',
+      userId: user.uid,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('Testando gravação...', testData);
+    const docId = await firestoreService.saveDocument('test-collection', testData);
+    console.log('Teste de gravação bem-sucedido. Doc ID:', docId);
+    
+    // Teste de leitura imediata
+    console.log('Testando leitura imediata...');
+    const readDoc = await firestoreService.getDocument('test-collection', docId);
+    console.log('Teste de leitura bem-sucedido:', readDoc);
+    
+    // Teste de query
+    console.log('Testando query por userId...');
+    const queryResult = await firestoreService.listDocuments(
+      'test-collection',
+      [['userId', '==', user.uid]]
+    );
+    console.log('Teste de query bem-sucedido:', queryResult.length, 'documentos');
+    
+    // Limpeza
+    await firestoreService.deleteDocument('test-collection', docId);
+    console.log('Documento de teste removido');
+    
+  } catch (error) {
+    console.error('Erro no teste de conexão:', error);
   }
 };
 

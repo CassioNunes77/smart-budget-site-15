@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { 
   getUserTransactions, 
   addTransaction as addTransactionService,
   updateTransaction as updateTransactionService,
   deleteTransaction as deleteTransactionService,
-  updateTransactionStatus as updateTransactionStatusService
+  updateTransactionStatus as updateTransactionStatusService,
+  testFirestoreConnection
 } from '@/services/transactionService';
 import { useFirebaseAuth } from './useFirebaseAuth';
 
@@ -30,7 +32,12 @@ export const useFirebaseTransactions = () => {
   // Carregar transações quando o usuário estiver autenticado
   useEffect(() => {
     const loadTransactions = async () => {
+      console.log('=== HOOK useFirebaseTransactions - loadTransactions ===');
+      console.log('User no hook:', user?.uid, user?.email);
+      console.log('Loading state:', loading);
+      
       if (!user) {
+        console.log('Usuário não está disponível, limpando transações');
         setTransactions([]);
         setLoading(false);
         return;
@@ -40,28 +47,44 @@ export const useFirebaseTransactions = () => {
       setError(null);
 
       try {
-        console.log('Carregando transações do Firestore...');
+        console.log('Iniciando carregamento de transações do Firestore...');
+        
+        // Teste de conexão primeiro
+        await testFirestoreConnection();
+        
+        console.log('Executando getUserTransactions...');
         const data = await getUserTransactions();
+        
+        console.log(`Dados recebidos: ${data.length} transações`);
+        console.log('Transações completas:', data);
+        
         setTransactions(data);
-        console.log(`${data.length} transações carregadas`);
+        console.log('Estado de transações atualizado no hook');
+        
       } catch (err) {
-        console.error('Erro ao carregar transações:', err);
+        console.error('Erro detalhado ao carregar transações no hook:', err);
         setError('Erro ao carregar transações');
         setTransactions([]);
       } finally {
         setLoading(false);
+        console.log('Loading finalizado');
       }
     };
 
-    loadTransactions();
-  }, [user]);
+    // Aguardar um pouco para garantir que o auth está estabilizado
+    const timer = setTimeout(() => {
+      loadTransactions();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [user?.uid]); // Dependência específica no UID
 
   // Adicionar transação
   const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
-      console.log('useFirebaseTransactions: Iniciando adição de transação');
-      console.log('Dados recebidos:', transactionData);
-      console.log('Usuário atual:', user?.uid);
+      console.log('=== HOOK - addTransaction ===');
+      console.log('Dados recebidos no hook:', transactionData);
+      console.log('Usuário atual no hook:', user?.uid);
       
       if (!user) {
         console.error('Usuário não está autenticado no hook');
@@ -71,12 +94,11 @@ export const useFirebaseTransactions = () => {
       const newId = await addTransactionService(transactionData);
       console.log('Transação adicionada com ID:', newId);
       
-      // Atualizar estado local imediatamente
-      const newTransaction = { ...transactionData, id: newId };
-      setTransactions(prev => {
-        console.log('Atualizando estado local com nova transação');
-        return [newTransaction, ...prev];
-      });
+      // Recarregar transações em vez de atualizar localmente
+      console.log('Recarregando todas as transações...');
+      const updatedTransactions = await getUserTransactions();
+      setTransactions(updatedTransactions);
+      console.log('Transações recarregadas:', updatedTransactions.length);
       
       return newId;
     } catch (err) {
@@ -91,10 +113,9 @@ export const useFirebaseTransactions = () => {
       console.log('Atualizando transação:', transactionId, updates);
       await updateTransactionService(transactionId, updates);
       
-      // Atualizar estado local imediatamente
-      setTransactions(prev => 
-        prev.map(t => t.id === transactionId ? { ...t, ...updates } : t)
-      );
+      // Recarregar transações
+      const updatedTransactions = await getUserTransactions();
+      setTransactions(updatedTransactions);
     } catch (err) {
       console.error('Erro ao atualizar transação:', err);
       throw err;
@@ -107,8 +128,9 @@ export const useFirebaseTransactions = () => {
       console.log('Excluindo transação:', transactionId);
       await deleteTransactionService(transactionId);
       
-      // Atualizar estado local imediatamente
-      setTransactions(prev => prev.filter(t => t.id !== transactionId));
+      // Recarregar transações
+      const updatedTransactions = await getUserTransactions();
+      setTransactions(updatedTransactions);
     } catch (err) {
       console.error('Erro ao excluir transação:', err);
       throw err;
@@ -124,10 +146,9 @@ export const useFirebaseTransactions = () => {
       console.log('Atualizando status da transação:', transactionId, status);
       await updateTransactionStatusService(transactionId, status);
       
-      // Atualizar estado local imediatamente
-      setTransactions(prev => 
-        prev.map(t => t.id === transactionId ? { ...t, status } : t)
-      );
+      // Recarregar transações
+      const updatedTransactions = await getUserTransactions();
+      setTransactions(updatedTransactions);
     } catch (err) {
       console.error('Erro ao atualizar status da transação:', err);
       throw err;
@@ -138,9 +159,11 @@ export const useFirebaseTransactions = () => {
   const refreshTransactions = async () => {
     if (!user) return;
     
+    console.log('=== REFRESH TRANSACTIONS ===');
     setLoading(true);
     try {
       const data = await getUserTransactions();
+      console.log('Transações recarregadas manualmente:', data.length);
       setTransactions(data);
     } catch (err) {
       console.error('Erro ao recarregar transações:', err);
@@ -149,6 +172,15 @@ export const useFirebaseTransactions = () => {
       setLoading(false);
     }
   };
+
+  // Log do estado atual para debug
+  useEffect(() => {
+    console.log('=== ESTADO ATUAL DO HOOK ===');
+    console.log('Transactions:', transactions.length);
+    console.log('Loading:', loading);
+    console.log('Error:', error);
+    console.log('User:', user?.uid);
+  }, [transactions, loading, error, user]);
 
   return {
     transactions,
