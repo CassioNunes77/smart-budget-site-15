@@ -5,160 +5,127 @@ import { auth } from './firebase';
 export interface Category {
   id: string;
   name: string;
-  icon: string;
-  color: string;
-  isDefault: boolean;
-  userId?: string;
+  userId: string;
 }
 
-const DEFAULT_CATEGORIES: Omit<Category, 'id' | 'userId'>[] = [
-  { name: 'Sem categoria', icon: 'Tag', color: '#64748b', isDefault: true },
-  { name: 'Salário', icon: 'DollarSign', color: '#22c55e', isDefault: true },
-  { name: 'Serviços', icon: 'Briefcase', color: '#3b82f6', isDefault: true },
-  { name: 'Empréstimos', icon: 'CreditCard', color: '#f59e0b', isDefault: true },
-  { name: 'Casa', icon: 'Home', color: '#8b5cf6', isDefault: true },
-  { name: 'Alimentação', icon: 'Utensils', color: '#f97316', isDefault: true },
-  { name: 'Transporte', icon: 'Car', color: '#06b6d4', isDefault: true },
-  { name: 'Saúde', icon: 'Heart', color: '#ef4444', isDefault: true },
-  { name: 'Lazer', icon: 'Gamepad2', color: '#ec4899', isDefault: true },
-  { name: 'Outros', icon: 'Tag', color: '#6b7280', isDefault: true }
-];
-
-export const getUserCategories = async (): Promise<Category[]> => {
+// Buscar categorias do usuário
+export const getUserCategories = async (): Promise<string[]> => {
   const user = auth.currentUser;
-  
   if (!user) {
-    return DEFAULT_CATEGORIES.map((cat, index) => ({
-      ...cat,
-      id: `default-${index}`
-    }));
+    console.log('Usuário não autenticado, retornando categorias padrão');
+    return [
+      'Sem categoria',
+      'Alimentação',
+      'Transporte',
+      'Moradia',
+      'Saúde',
+      'Educação',
+      'Lazer',
+      'Outros'
+    ];
   }
 
   try {
-    // Buscar categorias personalizadas do usuário
-    const userCategories = await firestoreService.listDocuments(
-      'user_categories',
-      [['userId', '==', user.uid]]
+    const categories = await firestoreService.listDocuments(
+      'categories', 
+      [['userId', '==', user.uid]],
+      'name',
+      'asc'
     );
-
-    // Se não tem categorias personalizadas, criar as padrão
-    if (userCategories.length === 0) {
-      console.log('Criando categorias padrão para usuário:', user.uid);
-      const createdCategories = [];
-      
-      for (const defaultCat of DEFAULT_CATEGORIES) {
-        const categoryData = {
-          ...defaultCat,
-          userId: user.uid
-        };
-        
-        const docId = await firestoreService.saveDocument('user_categories', categoryData);
-        createdCategories.push({
-          ...categoryData,
-          id: docId
-        });
-      }
-      
-      return createdCategories;
-    }
-
-    return userCategories as Category[];
-  } catch (error) {
-    console.error('Erro ao buscar categorias do usuário:', error);
-    return DEFAULT_CATEGORIES.map((cat, index) => ({
-      ...cat,
-      id: `default-${index}`
-    }));
-  }
-};
-
-export const updateUserCategories = async (categories: Category[]): Promise<void> => {
-  const user = auth.currentUser;
-  
-  if (!user) {
-    throw new Error('Usuário não autenticado');
-  }
-
-  try {
-    // Deletar todas as categorias existentes do usuário
-    const existingCategories = await firestoreService.listDocuments(
-      'user_categories',
-      [['userId', '==', user.uid]]
-    );
-
-    for (const category of existingCategories) {
-      await firestoreService.deleteDocument('user_categories', category.id);
-    }
-
-    // Criar as novas categorias
-    for (const category of categories) {
-      const categoryData = {
-        name: category.name,
-        icon: category.icon,
-        color: category.color,
-        isDefault: category.isDefault || false,
-        userId: user.uid
-      };
-      
-      await firestoreService.saveDocument('user_categories', categoryData);
-    }
-
-    console.log('Categorias atualizadas com sucesso');
-  } catch (error) {
-    console.error('Erro ao atualizar categorias:', error);
-    throw error;
-  }
-};
-
-export const addUserCategory = async (category: Omit<Category, 'id' | 'userId'>): Promise<string> => {
-  const user = auth.currentUser;
-  
-  if (!user) {
-    throw new Error('Usuário não autenticado');
-  }
-
-  try {
-    const categoryData = {
-      ...category,
-      userId: user.uid,
-      isDefault: false
-    };
     
-    const docId = await firestoreService.saveDocument('user_categories', categoryData);
-    console.log('Nova categoria criada:', docId);
-    return docId;
+    const categoryNames = categories.map(cat => cat.name);
+    
+    // Se não há categorias no Firestore, retornar as padrão
+    if (categoryNames.length === 0) {
+      return [
+        'Sem categoria',
+        'Alimentação',
+        'Transporte',
+        'Moradia',
+        'Saúde',
+        'Educação',
+        'Lazer',
+        'Outros'
+      ];
+    }
+    
+    console.log(`${categoryNames.length} categorias encontradas`);
+    return categoryNames;
   } catch (error) {
-    console.error('Erro ao adicionar categoria:', error);
-    throw error;
+    console.error('Erro ao buscar categorias:', error);
+    return [
+      'Sem categoria',
+      'Alimentação',
+      'Transporte',
+      'Moradia',
+      'Saúde',
+      'Educação',
+      'Lazer',
+      'Outros'
+    ];
   }
 };
 
-export const deleteUserCategory = async (categoryId: string): Promise<void> => {
+// Salvar categorias do usuário
+export const saveUserCategories = async (categories: string[]): Promise<void> => {
   const user = auth.currentUser;
-  
-  if (!user) {
-    throw new Error('Usuário não autenticado');
+  if (!user) throw new Error("Usuário não autenticado");
+
+  console.log('Salvando categorias:', categories);
+
+  // Primeiro, buscar categorias existentes para identificar quais remover
+  const existingCategories = await firestoreService.listDocuments(
+    'categories',
+    [['userId', '==', user.uid]]
+  );
+
+  // Remover categorias que não estão mais na lista
+  for (const existingCategory of existingCategories) {
+    if (!categories.includes(existingCategory.name)) {
+      await firestoreService.deleteDocument('categories', existingCategory.id);
+    }
   }
 
-  try {
-    await firestoreService.deleteDocument('user_categories', categoryId);
-    console.log('Categoria deletada:', categoryId);
-  } catch (error) {
-    console.error('Erro ao deletar categoria:', error);
-    throw error;
+  // Adicionar ou atualizar categorias
+  for (const categoryName of categories) {
+    const existingCategory = existingCategories.find(cat => cat.name === categoryName);
+    
+    if (!existingCategory) {
+      // Criar nova categoria
+      await firestoreService.saveDocument('categories', {
+        name: categoryName,
+        userId: user.uid
+      });
+    }
   }
 };
 
-export const getCategoryByName = (categories: Category[], categoryName: string): Category | undefined => {
-  return categories.find(cat => cat.name === categoryName);
+// Adicionar nova categoria
+export const addCategory = async (categoryName: string): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Usuário não autenticado");
+
+  console.log('Adicionando categoria:', categoryName);
+
+  await firestoreService.saveDocument('categories', {
+    name: categoryName,
+    userId: user.uid
+  });
 };
 
-export const getCategoryColor = (categories: Category[], categoryName: string): string => {
-  const category = getCategoryByName(categories, categoryName);
-  return category?.color || '#64748b';
-};
+// Remover categoria
+export const removeCategory = async (categoryName: string): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Usuário não autenticado");
 
-export const getCategoryIcon = (categories: Category[], categoryName: string): string => {
-  const category = getCategoryByName(categories, categoryName);
-  return category?.icon || 'Tag';
+  console.log('Removendo categoria:', categoryName);
+
+  const categories = await firestoreService.listDocuments(
+    'categories',
+    [['userId', '==', user.uid], ['name', '==', categoryName]]
+  );
+
+  for (const category of categories) {
+    await firestoreService.deleteDocument('categories', category.id);
+  }
 };

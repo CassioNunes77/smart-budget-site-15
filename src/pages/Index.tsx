@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock, Crown, Lightbulb, Info, Bell, BellOff } from 'lucide-react';
+import { PlusCircle, TrendingUp, TrendingDown, DollarSign, Eye, EyeOff, Clock, Crown, Lightbulb, Info } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import AuthModal from '@/components/AuthModal';
 import TransactionModal from '@/components/TransactionModal';
@@ -13,8 +13,6 @@ import Settings from '@/components/Settings';
 import UserProfile from '@/components/UserProfile';
 import CategoryManager from '@/components/CategoryManager';
 import PremiumModal from '@/components/PremiumModal';
-import MonthlyTransactionsSummary from '@/components/MonthlyTransactionsSummary';
-import PeriodFilter from '@/components/PeriodFilter';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
@@ -100,10 +98,7 @@ const Dashboard: React.FC = () => {
     billReminders: true
   });
   const [migrationInProgress, setMigrationInProgress] = useState(false);
-  const [dashboardPeriodFilter, setDashboardPeriodFilter] = useState<string>('all');
-  const [dashboardStartDate, setDashboardStartDate] = useState('');
-  const [dashboardEndDate, setDashboardEndDate] = useState('');
-
+  
   // Ref para controlar se já mostrou o toast de login
   const hasShownLoginToast = useRef(false);
   const isInitialized = useRef(false);
@@ -440,7 +435,7 @@ const Dashboard: React.FC = () => {
     return <AuthModal onLogin={handleLogin} />;
   }
 
-  const handleUpdateCategories = async (newCategories: any[]) => {
+  const handleUpdateCategories = async (newCategories: string[]) => {
     try {
       await updateFirebaseCategories(newCategories);
     } catch (error) {
@@ -459,68 +454,15 @@ const Dashboard: React.FC = () => {
   };
 
   const toggleNotificationSetting = (setting: string) => {
-    setNotificationSettings(prev => {
-      const newSettings = {
-        ...prev,
-        [setting]: !prev[setting]
-      };
-      
-      // Mostrar notificação sobre o status
-      toast({
-        title: newSettings[setting] ? "Notificações ativadas" : "Notificações desativadas",
-        description: newSettings[setting] 
-          ? "Você receberá lembretes de contas a pagar" 
-          : "Os lembretes foram desativados",
-        duration: 3000,
-      });
-      
-      return newSettings;
-    });
-  };
-
-  // Função para filtrar transações do dashboard por período
-  const getFilteredDashboardTransactions = () => {
-    let filtered = [...transactions];
-
-    if (dashboardPeriodFilter !== 'all') {
-      const now = new Date();
-      let startDate = new Date();
-      
-      switch (dashboardPeriodFilter) {
-        case 'week':
-          startDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          startDate.setMonth(now.getMonth() - 1);
-          break;
-        case 'quarter':
-          startDate.setMonth(now.getMonth() - 3);
-          break;
-        case 'year':
-          startDate.setFullYear(now.getFullYear() - 1);
-          break;
-        case 'custom':
-          if (dashboardStartDate && dashboardEndDate) {
-            filtered = filtered.filter(t => {
-              const transactionDate = new Date(t.date);
-              return transactionDate >= new Date(dashboardStartDate) && transactionDate <= new Date(dashboardEndDate);
-            });
-          }
-          break;
-      }
-      
-      if (dashboardPeriodFilter !== 'custom') {
-        filtered = filtered.filter(t => new Date(t.date) >= startDate);
-      }
-    }
-
-    return filtered;
+    setNotificationSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        const filteredTransactions = getFilteredDashboardTransactions();
         return (
           <div className="space-y-6 animate-fade-in">
             {/* Header */}
@@ -552,20 +494,6 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Filtro de Período do Dashboard */}
-            <Card className="shadow-sm">
-              <CardContent className="p-4">
-                <PeriodFilter
-                  periodFilter={dashboardPeriodFilter}
-                  setPeriodFilter={setDashboardPeriodFilter}
-                  startDate={dashboardStartDate}
-                  setStartDate={setDashboardStartDate}
-                  endDate={dashboardEndDate}
-                  setEndDate={setDashboardEndDate}
-                />
-              </CardContent>
-            </Card>
-
             {/* Dicas Minimalistas */}
             {transactions.length === 0 && (
               <Alert className="border-primary/20 bg-primary/5">
@@ -585,7 +513,7 @@ const Dashboard: React.FC = () => {
               </Alert>
             )}
 
-            {/* Cards de Resumo - usando transações filtradas */}
+            {/* Cards de Resumo */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -593,14 +521,7 @@ const Dashboard: React.FC = () => {
                   <TrendingUp className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(
-                      filteredTransactions
-                        .filter(t => t.type === 'income' && (!t.status || t.status === 'received'))
-                        .reduce((sum, t) => sum + t.amount, 0), 
-                      currency
-                    )}
-                  </div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedIncome, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">Valores recebidos</p>
                 </CardContent>
               </Card>
@@ -611,14 +532,7 @@ const Dashboard: React.FC = () => {
                   <Clock className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(
-                      filteredTransactions
-                        .filter(t => t.type === 'income' && t.status === 'unreceived')
-                        .reduce((sum, t) => sum + t.amount, 0), 
-                      currency
-                    )}
-                  </div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingIncome, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">A receber</p>
                 </CardContent>
               </Card>
@@ -629,14 +543,7 @@ const Dashboard: React.FC = () => {
                   <TrendingDown className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(
-                      filteredTransactions
-                        .filter(t => t.type === 'expense' && (!t.status || t.status === 'paid'))
-                        .reduce((sum, t) => sum + t.amount, 0), 
-                      currency
-                    )}
-                  </div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.consolidatedExpenses, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">Valores pagos</p>
                 </CardContent>
               </Card>
@@ -647,14 +554,7 @@ const Dashboard: React.FC = () => {
                   <Clock className="h-6 w-6 opacity-90" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(
-                      filteredTransactions
-                        .filter(t => t.type === 'expense' && t.status === 'unpaid')
-                        .reduce((sum, t) => sum + t.amount, 0), 
-                      currency
-                    )}
-                  </div>
+                  <div className="text-2xl font-bold">{formatCurrency(financialSummary.pendingExpenses, currency)}</div>
                   <p className="text-xs opacity-80 mt-1">A pagar</p>
                 </CardContent>
               </Card>
@@ -700,7 +600,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Gráficos */}
-            <FinancialCharts transactions={filteredTransactions} />
+            <FinancialCharts transactions={transactions} />
 
             {/* Lista de Transações Recentes */}
             <Card className="shadow-lg">
@@ -709,7 +609,7 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <TransactionsList 
-                  transactions={filteredTransactions.slice(0, 5)}
+                  transactions={transactions.slice(0, 5)}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
@@ -745,12 +645,6 @@ const Dashboard: React.FC = () => {
               </Button>
             </div>
 
-            {/* Resumo Mensal */}
-            <MonthlyTransactionsSummary 
-              transactions={transactions} 
-              currency={currency}
-            />
-
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Todas as Transações</CardTitle>
@@ -779,7 +673,7 @@ const Dashboard: React.FC = () => {
               <p className="text-muted-foreground mt-1">Análise detalhada das suas finanças</p>
             </div>
 
-            <FinancialCharts transactions={transactions} detailed={true} categories={categories} />
+            <FinancialCharts transactions={transactions} detailed={true} />
 
             <DownloadManager transactions={transactions} user={user} />
 
@@ -868,18 +762,11 @@ const Dashboard: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {notificationSettings.billReminders ? (
-                        <Bell className="w-5 h-5 text-primary" />
-                      ) : (
-                        <BellOff className="w-5 h-5 text-muted-foreground" />
-                      )}
-                      <div>
-                        <span className="font-medium">Lembretes de contas a pagar</span>
-                        <p className="text-sm text-muted-foreground">
-                          Receba notificações sobre despesas pendentes
-                        </p>
-                      </div>
+                    <div>
+                      <span className="font-medium">Lembretes de contas a pagar</span>
+                      <p className="text-sm text-muted-foreground">
+                        Receba notificações sobre despesas pendentes
+                      </p>
                     </div>
                     <Switch
                       checked={notificationSettings.billReminders}
