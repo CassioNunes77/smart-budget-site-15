@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -5,7 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, TrendingUp, TrendingDown, Filter, CheckCircle, XCircle, Clock, Tag, Upload } from 'lucide-react';
+import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import PeriodFilter from './PeriodFilter';
+import { Category } from '@/services/categoryService';
 
 interface Transaction {
   id: string;
@@ -23,7 +27,7 @@ interface TransactionsListProps {
   onDelete: (id: string) => void;
   onUpdateStatus?: (id: string, status: 'paid' | 'unpaid' | 'received' | 'unreceived') => void;
   showFilters?: boolean;
-  categories?: string[];
+  categories?: Category[];
   showUpload?: boolean;
   onUploadCSV?: (file: File) => void;
 }
@@ -63,29 +67,45 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      'Alimentação': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-      'Transporte': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      'Moradia': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-      'Saúde': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      'Educação': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
-      'Entretenimento': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
-      'Roupas': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-      'Tecnologia': 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300',
-      'Viagem': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'Investimentos': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-      'Salário': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
-      'Freelance': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
-      'Vendas': 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-300',
-      'Sem categoria': 'bg-slate-100 text-slate-800 dark:bg-slate-800/30 dark:text-slate-300'
+  const getCategoryData = (categoryName: string) => {
+    const category = categories.find(cat => cat.name === categoryName);
+    if (category) {
+      return {
+        color: category.color,
+        icon: category.icon
+      };
+    }
+    
+    // Fallback para categorias não encontradas
+    return {
+      color: '#64748b',
+      icon: 'Tag'
     };
-    return colors[category] || 'bg-slate-100 text-slate-800 dark:bg-slate-800/30 dark:text-slate-300';
   };
 
-  const getCategoryIcon = (category: string) => {
-    // Retorna ícone Tag para todas as categorias por enquanto
-    return Tag;
+  const getCategoryIcon = (categoryName: string) => {
+    const { icon } = getCategoryData(categoryName);
+    const IconComponent = (LucideIcons as any)[icon] || LucideIcons.Tag;
+    return IconComponent;
+  };
+
+  const getCategoryColor = (categoryName: string) => {
+    const { color } = getCategoryData(categoryName);
+    // Converter cor hex para classes do Tailwind
+    const colorMap: { [key: string]: string } = {
+      '#22c55e': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      '#3b82f6': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      '#f59e0b': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+      '#8b5cf6': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      '#f97316': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+      '#06b6d4': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+      '#ef4444': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      '#ec4899': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+      '#6b7280': 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300',
+      '#64748b': 'bg-slate-100 text-slate-800 dark:bg-slate-800/30 dark:text-slate-300'
+    };
+    
+    return colorMap[color] || 'bg-slate-100 text-slate-800 dark:bg-slate-800/30 dark:text-slate-300';
   };
 
   const getStatusColor = (transaction: Transaction) => {
@@ -206,10 +226,14 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filtros
-              </CardTitle>
+              <PeriodFilter
+                periodFilter={periodFilter}
+                setPeriodFilter={setPeriodFilter}
+                startDate={startDate}
+                setStartDate={setStartDate}
+                endDate={endDate}
+                setEndDate={setEndDate}
+              />
               {showUpload && (
                 <div>
                   <input
@@ -232,7 +256,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -270,51 +294,13 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="space-y-2">
-                <Label>Período</Label>
-                <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="week">Última semana</SelectItem>
-                    <SelectItem value="month">Último mês</SelectItem>
-                    <SelectItem value="quarter">Últimos 3 meses</SelectItem>
-                    <SelectItem value="year">Último ano</SelectItem>
-                    <SelectItem value="custom">Personalizado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {periodFilter === 'custom' && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Data Inicial</Label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Data Final</Label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
             </div>
           </CardContent>
         </Card>
