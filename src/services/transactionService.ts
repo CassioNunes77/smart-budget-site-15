@@ -1,3 +1,4 @@
+
 import firestoreService from './firestoreService';
 import { auth } from './firebase';
 
@@ -52,7 +53,7 @@ export const addTransaction = async (transactionData: Omit<Transaction, 'id' | '
   }
 };
 
-// Buscar transações do usuário
+// Buscar transações do usuário - REMOVENDO ORDENAÇÃO TEMPORARIAMENTE
 export const getUserTransactions = async (): Promise<Transaction[]> => {
   const user = auth.currentUser;
   
@@ -68,12 +69,13 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
   console.log('Buscando transações para usuário ID:', user.uid);
 
   try {
-    console.log('Executando query no Firestore...');
+    console.log('Executando query no Firestore SEM ORDENAÇÃO...');
+    
+    // REMOVENDO ORDENAÇÃO TEMPORARIAMENTE PARA EVITAR ERRO DE ÍNDICE
     const transactions = await firestoreService.listDocuments(
       'transactions', 
-      [['userId', '==', user.uid]],
-      'date',
-      'desc'
+      [['userId', '==', user.uid]]
+      // Removendo orderBy temporariamente: 'date', 'desc'
     );
     
     console.log(`Query executada com sucesso. ${transactions.length} transações encontradas`);
@@ -81,7 +83,14 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
     console.log('UserIds das transações:', transactions.map(t => t.userId));
     console.log('UserID atual:', user.uid);
     
-    return transactions as Transaction[];
+    // Ordenar manualmente no lado do cliente
+    const sortedTransactions = transactions.sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+    
+    console.log('Transações ordenadas no cliente:', sortedTransactions.length);
+    
+    return sortedTransactions as Transaction[];
   } catch (error) {
     console.error('Erro detalhado ao buscar transações:', error);
     return [];
