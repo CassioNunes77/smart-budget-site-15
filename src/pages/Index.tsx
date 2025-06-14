@@ -13,6 +13,7 @@ import Settings from '@/components/Settings';
 import UserProfile from '@/components/UserProfile';
 import CategoryManager from '@/components/CategoryManager';
 import PremiumModal from '@/components/PremiumModal';
+import PeriodFilter from '@/components/PeriodFilter';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
@@ -98,6 +99,7 @@ const Dashboard: React.FC = () => {
     billReminders: true
   });
   const [migrationInProgress, setMigrationInProgress] = useState(false);
+  const [periodFilter, setPeriodFilter] = useState('month');
   
   // Ref para controlar se já mostrou o toast de login
   const hasShownLoginToast = useRef(false);
@@ -173,21 +175,52 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Calcular totais separando por status
+  // Filtrar transações por período
+  const getFilteredTransactions = () => {
+    if (periodFilter === 'all') return transactions;
+
+    const now = new Date();
+    let startDate = new Date();
+
+    switch (periodFilter) {
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        return transactions;
+    }
+
+    return transactions.filter(transaction => 
+      new Date(transaction.date) >= startDate
+    );
+  };
+
+  const filteredTransactions = getFilteredTransactions();
+
+  // Calcular totais separando por status (usando transações filtradas)
   const getFinancialSummary = () => {
-    const consolidatedIncome = transactions
+    const consolidatedIncome = filteredTransactions
       .filter(t => t.type === 'income' && (!t.status || t.status === 'received'))
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const pendingIncome = transactions
+    const pendingIncome = filteredTransactions
       .filter(t => t.type === 'income' && t.status === 'unreceived')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const consolidatedExpenses = transactions
+    const consolidatedExpenses = filteredTransactions
       .filter(t => t.type === 'expense' && (!t.status || t.status === 'paid'))
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const pendingExpenses = transactions
+    const pendingExpenses = filteredTransactions
       .filter(t => t.type === 'expense' && t.status === 'unpaid')
       .reduce((sum, t) => sum + t.amount, 0);
 
@@ -454,10 +487,19 @@ const Dashboard: React.FC = () => {
   };
 
   const toggleNotificationSetting = (setting: string) => {
+    const newValue = !notificationSettings[setting];
     setNotificationSettings(prev => ({
       ...prev,
-      [setting]: !prev[setting]
+      [setting]: newValue
     }));
+    
+    // Mostrar toast de confirmação
+    toast({
+      title: newValue ? "Lembretes ativados!" : "Lembretes desativados!",
+      description: newValue 
+        ? "Você receberá notificações sobre contas a pagar." 
+        : "As notificações de contas foram desabilitadas.",
+    });
   };
 
   const renderPage = () => {
@@ -473,7 +515,13 @@ const Dashboard: React.FC = () => {
                 </h1>
                 <p className="text-muted-foreground mt-1">Aqui está um resumo das suas finanças</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <PeriodFilter 
+                  value={periodFilter} 
+                  onChange={setPeriodFilter}
+                  showLabel={false}
+                  compact={true}
+                />
                 <Button 
                   className="premium-button standard-button-height" 
                   size="sm"
@@ -600,7 +648,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Gráficos */}
-            <FinancialCharts transactions={transactions} />
+            <FinancialCharts transactions={filteredTransactions} categories={categories} />
 
             {/* Lista de Transações Recentes */}
             <Card className="shadow-lg">
@@ -609,13 +657,13 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <TransactionsList 
-                  transactions={transactions.slice(0, 5)}
+                  transactions={filteredTransactions.slice(0, 5)}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
                   categories={categories}
                 />
-                {transactions.length === 0 && (
+                {filteredTransactions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <DollarSign className="w-16 h-16 mx-auto mb-4 opacity-50" />
                     <p className="text-lg">Nenhuma transação encontrada</p>
@@ -673,7 +721,7 @@ const Dashboard: React.FC = () => {
               <p className="text-muted-foreground mt-1">Análise detalhada das suas finanças</p>
             </div>
 
-            <FinancialCharts transactions={transactions} detailed={true} />
+            <FinancialCharts transactions={filteredTransactions} detailed={true} />
 
             <DownloadManager transactions={transactions} user={user} />
 

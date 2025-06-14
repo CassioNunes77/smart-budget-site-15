@@ -1,203 +1,152 @@
 
 import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Crown, Check, Star, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Check, Crown, Star, Zap, Shield, Download, BarChart3 } from 'lucide-react';
 
 interface PremiumModalProps {
   onClose: () => void;
 }
 
 const PremiumModal: React.FC<PremiumModalProps> = ({ onClose }) => {
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-6xl bg-background max-h-[calc(100vh-2rem)] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-2xl">
-            <Crown className="w-6 h-6 inline mr-2 text-yellow-500" />
-            Planos Fluxo Fácil
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Plano Free */}
-            <Card className="border-2 border-muted">
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl">Plano Free</CardTitle>
-                <div className="text-3xl font-bold text-muted-foreground">R$ 0</div>
-                <p className="text-sm text-muted-foreground">Para sempre</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Até 100 transações por mês</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Categorias básicas</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Relatórios básicos</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Gráficos simples</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Suporte por email</span>
-                  </li>
-                </ul>
-                <Button variant="outline" className="w-full" disabled>
-                  Plano Atual
-                </Button>
-              </CardContent>
-            </Card>
+  const premiumFeatures = [
+    { icon: BarChart3, title: "Relatórios Avançados", description: "Análises detalhadas e gráficos personalizados" },
+    { icon: Download, title: "Exportação Ilimitada", description: "Exporte dados em múltiplos formatos" },
+    { icon: Shield, title: "Backup Automático", description: "Seus dados sempre seguros na nuvem" },
+    { icon: Zap, title: "Notificações Inteligentes", description: "Lembretes personalizados e alertas" },
+    { icon: Star, title: "Categorias Personalizadas", description: "Crie categorias ilimitadas com ícones" },
+    { icon: Crown, title: "Suporte Premium", description: "Atendimento prioritário 24/7" }
+  ];
 
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-center text-2xl font-bold flex items-center justify-center gap-2">
+            <Crown className="w-6 h-6 text-yellow-500" />
+            Fluxo Fácil Premium
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Planos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Plano Mensal */}
-            <Card className="border-2 border-primary relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                  <Star className="w-3 h-3" />
-                  Mais Popular
-                </div>
-              </div>
-              <CardHeader className="text-center pt-6">
-                <CardTitle className="text-xl text-primary">Plano Mensal</CardTitle>
-                <div className="text-3xl font-bold text-primary">R$ 9,90</div>
-                <div className="text-sm text-muted-foreground">
-                  <span className="line-through">R$ 24,90</span> por mês
-                </div>
-                <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                  60% de desconto
-                </div>
+            <Card className="border-2 border-border">
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl">Plano Mensal</CardTitle>
+                <div className="text-3xl font-bold text-primary">R$ 19,90</div>
+                <p className="text-muted-foreground">por mês</p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Transações ilimitadas</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Categorias personalizadas ilimitadas</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Relatórios detalhados</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Categorização automática</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Previsões financeiras</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Exportação de dados (CSV, PDF)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Suporte prioritário</span>
-                  </li>
-                </ul>
-                <Button className="w-full premium-button">
-                  <Crown className="w-4 h-4 mr-2" />
+                <Button className="w-full premium-button" size="lg">
                   Assinar Mensal
                 </Button>
+                <p className="text-sm text-center text-muted-foreground">
+                  Cancele a qualquer momento
+                </p>
               </CardContent>
             </Card>
 
             {/* Plano Anual */}
-            <Card className="border-2 border-orange-500 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                  <Zap className="w-3 h-3" />
-                  Melhor Valor
-                </div>
+            <Card className="border-2 border-primary relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-sm font-medium">
+                Mais Popular
               </div>
-              <CardHeader className="text-center pt-6">
-                <CardTitle className="text-xl text-orange-600">Plano Anual</CardTitle>
-                <div className="text-3xl font-bold text-orange-600">R$ 149</div>
-                <div className="text-sm text-muted-foreground">
-                  <span className="line-through">R$ 199</span> por ano
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl">Plano Anual</CardTitle>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground line-through">R$ 238,80</div>
+                  <div className="text-3xl font-bold text-primary">R$ 99,90</div>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    Economize 58%
+                  </Badge>
                 </div>
-                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
-                  25% de desconto + 2 meses grátis
-                </div>
+                <p className="text-muted-foreground">por ano</p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Tudo do plano mensal</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">2 meses gratuitos</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Backup automático na nuvem</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Acesso antecipado a novos recursos</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Consultoria financeira mensal</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">API para integrações</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Suporte 24/7</span>
-                  </li>
-                </ul>
-                <Button className="w-full bg-orange-600 hover:bg-orange-700">
-                  <Crown className="w-4 h-4 mr-2" />
+                <Button className="w-full premium-button" size="lg">
                   Assinar Anual
                 </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  Equivale a R$ 12,42/mês
+                <p className="text-sm text-center text-muted-foreground">
+                  Melhor custo-benefício
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="mt-8 text-center">
-            <h3 className="text-lg font-semibold mb-4">A versão premium inclui relatórios detalhados, categorização de despesas, previsões e muito mais!</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="p-4 border rounded-lg">
-                <Crown className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                <h4 className="font-medium mb-1">Sem Limitações</h4>
-                <p className="text-muted-foreground">Registre quantas transações quiser, sem restrições</p>
-              </div>
-              <div className="p-4 border rounded-lg">
-                <Star className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <h4 className="font-medium mb-1">Recursos Avançados</h4>
-                <p className="text-muted-foreground">Acesse ferramentas profissionais de gestão financeira</p>
-              </div>
-              <div className="p-4 border rounded-lg">
-                <Check className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <h4 className="font-medium mb-1">Suporte Premium</h4>
-                <p className="text-muted-foreground">Atendimento prioritário e especializado</p>
+          {/* Recursos Premium */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-center">O que você ganha com o Premium</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {premiumFeatures.map((feature, index) => (
+                <div key={index} className="flex items-start space-x-3 p-4 bg-card rounded-lg border">
+                  <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                    <feature.icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-foreground">{feature.title}</h4>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Comparação */}
+          <div className="bg-card rounded-lg border p-6">
+            <h3 className="text-lg font-semibold mb-4 text-center">Comparação de Planos</h3>
+            <div className="space-y-3">
+              {[
+                "Transações ilimitadas",
+                "Categorias personalizadas",
+                "Relatórios básicos",
+                "Exportação em CSV",
+                "Relatórios avançados",
+                "Exportação múltiplos formatos",
+                "Backup automático",
+                "Notificações inteligentes",
+                "Suporte premium"
+              ].map((feature, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-sm">{feature}</span>
+                  <div className="flex gap-8">
+                    <div className="w-16 text-center">
+                      {index < 4 ? (
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Limitado</span>
+                      )}
+                    </div>
+                    <div className="w-16 text-center">
+                      <Check className="w-4 h-4 text-green-500 mx-auto" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between mt-4 text-sm font-medium">
+              <span></span>
+              <div className="flex gap-8">
+                <span className="w-16 text-center">Grátis</span>
+                <span className="w-16 text-center text-primary">Premium</span>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {/* Garantia */}
+          <div className="text-center bg-muted/50 rounded-lg p-4">
+            <Shield className="w-8 h-8 text-green-500 mx-auto mb-2" />
+            <p className="font-medium">Garantia de 7 dias</p>
+            <p className="text-sm text-muted-foreground">
+              Não ficou satisfeito? Devolvemos 100% do seu dinheiro
+            </p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
