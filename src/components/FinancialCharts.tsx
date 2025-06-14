@@ -15,12 +15,22 @@ interface Transaction {
   status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
 }
 
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  isDefault: boolean;
+  userId?: string;
+}
+
 interface FinancialChartsProps {
   transactions: Transaction[];
   detailed?: boolean;
+  categories?: Category[];
 }
 
-const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detailed = false }) => {
+const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detailed = false, categories = [] }) => {
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -33,6 +43,12 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  // Get category color by name
+  const getCategoryColor = (categoryName: string) => {
+    const category = categories.find(cat => cat.name === categoryName);
+    return category?.color || '#64748b';
   };
 
   // Filtrar transações por período
@@ -99,7 +115,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
   const { consolidated, pending } = getTransactionsByStatus();
 
-  // Dados para gráfico de receitas por categoria
+  // Dados para gráfico de receitas por categoria (usando cores das categorias)
   const incomeByCategory = React.useMemo(() => {
     const categoryMap = new Map<string, number>();
     
@@ -112,11 +128,12 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
     return Array.from(categoryMap.entries()).map(([category, amount]) => ({
       name: category,
-      value: amount
+      value: amount,
+      color: getCategoryColor(category)
     }));
-  }, [filteredTransactions]);
+  }, [filteredTransactions, categories]);
 
-  // Dados para gráfico de despesas por categoria
+  // Dados para gráfico de despesas por categoria (usando cores das categorias)
   const expenseByCategory = React.useMemo(() => {
     const categoryMap = new Map<string, number>();
     
@@ -129,9 +146,10 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
     return Array.from(categoryMap.entries()).map(([category, amount]) => ({
       name: category,
-      value: amount
+      value: amount,
+      color: getCategoryColor(category)
     }));
-  }, [filteredTransactions]);
+  }, [filteredTransactions, categories]);
 
   // Dados para gráfico de pizza (incluindo pendentes)
   const pieData = [
@@ -449,7 +467,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                       dataKey="value"
                     >
                       {incomeByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => formatCurrency(Number(value))} />
@@ -477,7 +495,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                       dataKey="value"
                     >
                       {expenseByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => formatCurrency(Number(value))} />

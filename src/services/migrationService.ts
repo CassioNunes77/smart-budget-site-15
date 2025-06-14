@@ -2,7 +2,7 @@
 import firestoreService from './firestoreService';
 import { auth } from './firebase';
 import { addTransaction } from './transactionService';
-import { saveUserCategories } from './categoryService';
+import { updateUserCategories } from './categoryService';
 
 export const migrateLocalData = async (): Promise<void> => {
   const user = auth.currentUser;
@@ -48,7 +48,7 @@ export const migrateLocalData = async (): Promise<void> => {
     console.log(`Migrando ${localCategories.length} categorias...`);
     
     if (localCategories.length > 0) {
-      await saveUserCategories(localCategories);
+      await updateUserCategories(localCategories);
     }
 
     // Migrar configurações de moeda
