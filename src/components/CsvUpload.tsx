@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -171,17 +172,17 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
   };
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Upload className="w-5 h-5" />
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Upload className="w-4 h-4" />
           Importar CSV
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                <Info className="w-3 h-3 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-sm p-4">
+              <TooltipContent className="max-w-sm p-3">
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Formato esperado do CSV:</h4>
                   <ul className="list-disc list-inside space-y-1 text-xs">
@@ -200,36 +201,36 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
           </TooltipProvider>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="csv-upload">Selecionar arquivo CSV</Label>
+      <CardContent className="space-y-3 pt-0">
+        <div className="space-y-1">
+          <Label htmlFor="csv-upload" className="text-sm">Selecionar arquivo CSV</Label>
           <Input
             id="csv-upload"
             type="file"
             accept=".csv"
             onChange={handleFileUpload}
             disabled={isProcessing}
-            className="cursor-pointer"
+            className="cursor-pointer h-9"
           />
         </div>
 
         {isProcessing && (
-          <Alert>
+          <Alert className="py-2">
             <FileText className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="text-sm">
               Processando arquivo CSV...
             </AlertDescription>
           </Alert>
         )}
 
         {result && (
-          <Alert className={result.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+          <Alert className={`py-2 ${result.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
             {result.success ? (
               <CheckCircle className="h-4 w-4 text-green-600" />
             ) : (
               <AlertCircle className="h-4 w-4 text-red-600" />
             )}
-            <AlertDescription className={result.success ? 'text-green-700' : 'text-red-700'}>
+            <AlertDescription className={`text-sm ${result.success ? 'text-green-700' : 'text-red-700'}`}>
               {result.message}
             </AlertDescription>
           </Alert>
