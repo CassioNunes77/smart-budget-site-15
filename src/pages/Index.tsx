@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ const Index = () => {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [transactionToEdit, setTransactionToEdit] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
     setIsMounted(true);
@@ -105,13 +107,26 @@ const Index = () => {
     );
   };
 
+  // Filter transactions by current month
+  const getMonthlyTransactions = () => {
+    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate >= monthStart && transactionDate <= monthEnd;
+    });
+  };
+
+  const monthlyTransactions = getMonthlyTransactions();
+
   const renderDashboard = () => {
     return (
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-foreground">
-              Olá, {user?.name || 'Usuário'}! 💰
+            <h1 className="text-lg font-semibold text-muted-foreground">
+              Olá, {user?.displayName || user?.email || 'Usuário'}! 💰
             </h1>
             <p className="text-muted-foreground">Bem-vindo ao seu painel financeiro</p>
           </div>
@@ -132,12 +147,18 @@ const Index = () => {
           <DashboardCard title="Total de Transações" value={transactions.length} isLoading={loading} />
         </div>
 
-        <MonthlySummary transactions={transactions} isLoading={loading} />
+        <MonthlySummary 
+          transactions={transactions} 
+          currentMonth={currentMonth}
+          onMonthChange={setCurrentMonth}
+          currency="BRL"
+        />
 
-        <FinancialCharts transactions={transactions} isLoading={loading} />
+        <FinancialCharts transactions={monthlyTransactions} />
 
         <TransactionsList 
-          transactions={transactions} 
+          transactions={monthlyTransactions}
+          currentMonth={currentMonth}
           onEdit={handleEditTransaction}
           onDelete={handleDeleteTransaction}
           onUpdateStatus={handleUpdateTransactionStatus}
@@ -159,15 +180,17 @@ const Index = () => {
         renderDashboard()
       )}
 
-      <TransactionModal
-        isOpen={showTransactionModal}
-        onClose={() => {
-          setShowTransactionModal(false);
-          setTransactionToEdit(null);
-        }}
-        onSubmit={transactionToEdit ? handleUpdateTransaction : handleCreateTransaction}
-        transaction={transactionToEdit}
-      />
+      {showTransactionModal && (
+        <TransactionModal
+          onClose={() => {
+            setShowTransactionModal(false);
+            setTransactionToEdit(null);
+          }}
+          onSave={transactionToEdit ? handleUpdateTransaction : handleCreateTransaction}
+          editingTransaction={transactionToEdit}
+          categories={['Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Outros']}
+        />
+      )}
     </div>
   );
 };
