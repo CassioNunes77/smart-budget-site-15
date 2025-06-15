@@ -33,20 +33,49 @@ export const DEFAULT_CATEGORIES: CategoryConfig[] = [
   { name: 'Outros', icon: MoreHorizontal, color: 'text-gray-600' }
 ];
 
+// Mapeamento de nomes de ícones para componentes
+export const ICON_MAP: { [key: string]: React.ComponentType<any> } = {
+  'Tag': Tag,
+  'DollarSign': DollarSign,
+  'Briefcase': Briefcase,
+  'CreditCard': CreditCard,
+  'Home': Home,
+  'Utensils': Utensils,
+  'Car': Car,
+  'Heart': Heart,
+  'Gamepad2': Gamepad2,
+  'MoreHorizontal': MoreHorizontal
+};
+
 interface CategoryIconProps {
-  categoryName: string;
+  categoryName?: string;
+  iconName?: string;
+  color?: string;
   className?: string;
 }
 
-const CategoryIcon: React.FC<CategoryIconProps> = ({ categoryName, className = "w-4 h-4" }) => {
+const CategoryIcon: React.FC<CategoryIconProps> = ({ 
+  categoryName, 
+  iconName, 
+  color, 
+  className = "w-4 h-4" 
+}) => {
+  // Se temos iconName, usamos ele diretamente
+  if (iconName && ICON_MAP[iconName]) {
+    const IconComponent = ICON_MAP[iconName];
+    return <IconComponent className={`${className} ${color || 'text-slate-600'}`} />;
+  }
+
+  // Caso contrário, procuramos pela categoria padrão
   const categoryConfig = DEFAULT_CATEGORIES.find(cat => cat.name === categoryName);
   
-  if (!categoryConfig) {
-    return <Tag className={`${className} text-slate-600`} />;
+  if (categoryConfig) {
+    const IconComponent = categoryConfig.icon;
+    return <IconComponent className={`${className} ${color || categoryConfig.color}`} />;
   }
   
-  const IconComponent = categoryConfig.icon;
-  return <IconComponent className={`${className} ${categoryConfig.color}`} />;
+  // Fallback para ícone padrão
+  return <Tag className={`${className} ${color || 'text-slate-600'}`} />;
 };
 
 export const getCategoryColor = (categoryName: string): string => {

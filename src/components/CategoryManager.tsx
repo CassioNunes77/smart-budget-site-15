@@ -11,7 +11,6 @@ import {
   Trash2,
   Save,
   X,
-  Palette,
   DollarSign,
   Home,
   Car,
@@ -66,7 +65,8 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFirebaseCategories } from '@/hooks/useFirebaseCategories';
-import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
+import { Category } from '@/services/categoryService';
+import { DEFAULT_CATEGORIES, ICON_MAP } from '@/components/CategoryIcon';
 
 interface Category {
   id: string;
@@ -156,8 +156,7 @@ const colorOptions = [
 ];
 
 const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) => {
-  const { categories: firebaseCategories, loading, addCategory, removeCategory, updateCategories, error } = useFirebaseCategories();
-  const [categoryList, setCategoryList] = useState<Category[]>([]);
+  const { categories, loading, addCategory, removeCategory, updateCategory, error } = useFirebaseCategories();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryIcon, setNewCategoryIcon] = useState('Tag');
@@ -165,46 +164,21 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Carregar e formatar categorias
-  useEffect(() => {
-    if (!loading && firebaseCategories.length > 0) {
-      console.log('Categorias do Firebase:', firebaseCategories);
-      
-      // Converter categorias do Firebase para formato Category
-      const formattedCategories: Category[] = firebaseCategories
-        .filter(cat => cat !== 'Sem categoria') // Excluir "Sem categoria" da exibição
-        .map((categoryName, index) => {
-          // Verificar se é uma categoria base
-          const defaultCategory = DEFAULT_CATEGORIES.find(def => def.name === categoryName);
-          
-          if (defaultCategory) {
-            return getDefaultCategoryFormat(defaultCategory, index);
-          } else {
-            // Categoria personalizada
-            return {
-              id: `custom-${index}`,
-              name: categoryName,
-              icon: 'Tag',
-              color: colorOptions[index % colorOptions.length],
-              isBase: false
-            };
-          }
-        });
-      
-      setCategoryList(formattedCategories);
-    }
-  }, [firebaseCategories, loading]);
+  // Filtrar categorias visíveis (excluir "Sem categoria")
+  const visibleCategories = categories.filter(cat => cat.name !== 'Sem categoria');
+
+  const isBaseCategory = (categoryName: string) => {
+    return DEFAULT_CATEGORIES.some(cat => cat.name === categoryName);
+  };
 
   const handleSaveCategory = async (category: Category) => {
     try {
       console.log('Salvando categoria:', category);
-      
-      // Para qualquer modificação de categoria, apenas atualizar localmente
-      // As modificações só afetam a conta do usuário atual
-      const updatedCategories = categoryList.map(cat => 
-        cat.id === category.id ? category : cat
-      );
-      setCategoryList(updatedCategories);
+      await updateCategory(category.id, {
+        name: category.name,
+        icon: category.icon,
+        color: category.color
+      });
       
       toast({
         title: "Categoria personalizada!",
@@ -224,11 +198,11 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const categoryToDelete = categoryList.find(cat => cat.id === id);
+      const categoryToDelete = categories.find(cat => cat.id === id);
       if (!categoryToDelete) return;
 
       // Categorias base não podem ser deletadas
-      if (categoryToDelete.isBase) {
+      if (isBaseCategory(categoryToDelete.name)) {
         toast({
           title: "Categoria base",
           description: "Categorias base não podem ser excluídas. Use a edição para personalizar.",
@@ -258,7 +232,6 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
   };
 
   const handleAddCategory = async () => {
-    // Validação básica
     if (!newCategoryName.trim()) {
       toast({
         title: "Nome obrigatório",
@@ -269,10 +242,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
     }
 
     const trimmedName = newCategoryName.trim();
-
-    // Verificar se a categoria já existe (incluindo verificação case-insensitive)
-    const categoryExists = firebaseCategories.some(cat => 
-      cat.toLowerCase() === trimmedName.toLowerCase()
+    const categoryExists = categories.some(cat => 
+      cat.name.toLowerCase() === trimmedName.toLowerCase()
     );
 
     if (categoryExists) {
@@ -287,12 +258,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
     setIsCreating(true);
 
     try {
-      console.log('Tentando adicionar nova categoria:', trimmedName);
+      await addCategory(trimmedName, newCategoryIcon, newCategoryColor);
       
-      // Tentar adicionar categoria via Firebase
-      await addCategory(trimmedName);
-      
-      // Limpar formulário apenas em caso de sucesso
       setNewCategoryName('');
       setNewCategoryIcon('Tag');
       setNewCategoryColor(colorOptions[0]);
@@ -302,33 +269,11 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
         title: "Categoria criada!",
         description: `A categoria "${trimmedName}" foi adicionada com sucesso.`,
       });
-
-      console.log('Categoria adicionada com sucesso:', trimmedName);
-      
     } catch (error: any) {
-      console.error('Erro detalhado ao adicionar categoria:', error);
-      
-      let errorMessage = "Não foi possível criar a categoria. Tente novamente.";
-      
-      // Verificar tipos específicos de erro
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (error.code) {
-        switch (error.code) {
-          case 'permission-denied':
-            errorMessage = "Permissão negada. Verifique se você está logado.";
-            break;
-          case 'network-request-failed':
-            errorMessage = "Erro de conexão. Verifique sua internet.";
-            break;
-          default:
-            errorMessage = `Erro: ${error.code}`;
-        }
-      }
-      
+      console.error('Erro ao adicionar categoria:', error);
       toast({
         title: "Erro na criação",
-        description: errorMessage,
+        description: "Não foi possível criar a categoria. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -344,8 +289,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
   };
 
   const getIcon = (iconName: string) => {
-    const iconData = iconOptions.find(opt => opt.name === iconName);
-    return iconData ? iconData.icon : Tag;
+    return ICON_MAP[iconName] || iconOptions.find(opt => opt.name === iconName)?.icon || Tag;
   };
 
   if (loading) {
@@ -471,9 +415,10 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
 
       {/* Lista de Categorias */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categoryList.map((category) => {
-          const IconComponent = getIcon(category.icon);
+        {visibleCategories.map((category) => {
+          const IconComponent = getIcon(category.icon || 'Tag');
           const isEditing = editingId === category.id;
+          const isBase = isBaseCategory(category.name);
           
           return (
             <Card key={category.id} className="shadow-sm hover:shadow-md transition-shadow">
@@ -485,6 +430,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                     onCancel={() => setEditingId(null)}
                     iconOptions={iconOptions}
                     colorOptions={colorOptions}
+                    getIcon={getIcon}
                   />
                 ) : (
                   <div className="space-y-3">
@@ -498,7 +444,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                         </div>
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground">{category.name}</span>
-                          {category.isBase && (
+                          {isBase && (
                             <span className="text-xs text-muted-foreground">Categoria base</span>
                           )}
                         </div>
@@ -515,7 +461,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            if (category.isBase) {
+                            if (isBase) {
                               toast({
                                 title: "Categoria base",
                                 description: "Categorias base não podem ser excluídas.",
@@ -528,7 +474,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                             }
                           }}
                           className="text-destructive hover:text-destructive/80"
-                          disabled={category.isBase}
+                          disabled={isBase}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -542,7 +488,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
         })}
       </div>
 
-      {categoryList.length === 0 && !loading && (
+      {visibleCategories.length === 0 && !loading && (
         <div className="text-center py-8 text-muted-foreground">
           <p>Nenhuma categoria encontrada. Adicione sua primeira categoria personalizada!</p>
         </div>
@@ -557,6 +503,7 @@ interface CategoryEditFormProps {
   onCancel: () => void;
   iconOptions: Array<{ name: string; icon: any }>;
   colorOptions: string[];
+  getIcon: (iconName: string) => React.ComponentType<any>;
 }
 
 const CategoryEditForm: React.FC<CategoryEditFormProps> = ({
@@ -564,11 +511,12 @@ const CategoryEditForm: React.FC<CategoryEditFormProps> = ({
   onSave,
   onCancel,
   iconOptions,
-  colorOptions
+  colorOptions,
+  getIcon
 }) => {
   const [name, setName] = useState(category.name);
-  const [icon, setIcon] = useState(category.icon);
-  const [color, setColor] = useState(category.color);
+  const [icon, setIcon] = useState(category.icon || 'Tag');
+  const [color, setColor] = useState(category.color || '#64748b');
 
   const handleSave = () => {
     if (name.trim()) {
