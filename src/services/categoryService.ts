@@ -1,4 +1,3 @@
-
 import firestoreService from './firestoreService';
 import { auth } from './firebase';
 import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
@@ -7,24 +6,14 @@ export interface Category {
   id: string;
   name: string;
   userId: string;
-  icon?: string;
-  color?: string;
-  isCustom?: boolean;
 }
 
 // Buscar categorias do usuário
-export const getUserCategories = async (): Promise<Category[]> => {
+export const getUserCategories = async (): Promise<string[]> => {
   const user = auth.currentUser;
   if (!user) {
     console.log('Usuário não autenticado, retornando categorias padrão');
-    return DEFAULT_CATEGORIES.map((cat, index) => ({
-      id: `default-${index}`,
-      name: cat.name,
-      userId: '',
-      icon: getIconName(cat.icon),
-      color: cat.color,
-      isCustom: false
-    }));
+    return DEFAULT_CATEGORIES.map(cat => cat.name);
   }
 
   try {
@@ -41,67 +30,56 @@ export const getUserCategories = async (): Promise<Category[]> => {
     // Se não há categorias no Firestore, criar as categorias padrão para este usuário
     if (categories.length === 0) {
       console.log('Nenhuma categoria encontrada, criando categorias padrão para o usuário');
-      await initializeDefaultCategories();
-      // Buscar novamente após inicializar
-      const newCategories = await firestoreService.listDocuments(
+      const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
+      await initializeDefaultCategories(defaultCategoryNames);
+      return defaultCategoryNames;
+    }
+    
+    // Verificar se todas as categorias base estão presentes
+    const categoryNames = categories.map(cat => cat.name);
+    const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
+    const missingCategories = defaultCategoryNames.filter(name => !categoryNames.includes(name));
+    
+    // Se faltam categorias base, adicionar as que estão faltando
+    if (missingCategories.length > 0) {
+      console.log('Categorias base faltando, adicionando:', missingCategories);
+      for (const categoryName of missingCategories) {
+        await firestoreService.saveDocument('categories', {
+          name: categoryName,
+          userId: user.uid
+        });
+      }
+      // Recarregar categorias após adicionar as faltantes
+      const updatedCategories = await firestoreService.listDocuments(
         'categories', 
         [['userId', '==', user.uid]]
       );
-      return newCategories as Category[];
+      return updatedCategories.map(cat => cat.name).sort();
     }
     
-    return categories as Category[];
+    console.log(`${categoryNames.length} categorias processadas:`, categoryNames);
+    return categoryNames.sort();
   } catch (error) {
     console.error('Erro ao buscar categorias:', error);
     // Em caso de erro, retornar categorias padrão
-    return DEFAULT_CATEGORIES.map((cat, index) => ({
-      id: `default-${index}`,
-      name: cat.name,
-      userId: '',
-      icon: getIconName(cat.icon),
-      color: cat.color,
-      isCustom: false
-    }));
+    return DEFAULT_CATEGORIES.map(cat => cat.name);
   }
 };
 
-// Função auxiliar para obter o nome do ícone
-const getIconName = (IconComponent: any): string => {
-  // Mapear os componentes de ícone para seus nomes
-  const iconMap: { [key: string]: string } = {
-    'Tag': 'Tag',
-    'DollarSign': 'DollarSign', 
-    'Briefcase': 'Briefcase',
-    'CreditCard': 'CreditCard',
-    'Home': 'Home',
-    'Utensils': 'Utensils',
-    'Car': 'Car',
-    'Heart': 'Heart',
-    'Gamepad2': 'Gamepad2',
-    'MoreHorizontal': 'MoreHorizontal'
-  };
-  
-  const iconName = IconComponent?.name || 'Tag';
-  return iconMap[iconName] || 'Tag';
-};
-
 // Inicializar categorias padrão para um usuário
-const initializeDefaultCategories = async (): Promise<void> => {
+const initializeDefaultCategories = async (categories: string[]): Promise<void> => {
   const user = auth.currentUser;
   if (!user) throw new Error("Usuário não autenticado");
 
   console.log('Inicializando categorias padrão para usuário:', user.uid);
 
   try {
-    for (const defaultCategory of DEFAULT_CATEGORIES) {
+    for (const categoryName of categories) {
       await firestoreService.saveDocument('categories', {
-        name: defaultCategory.name,
-        userId: user.uid,
-        icon: getIconName(defaultCategory.icon),
-        color: defaultCategory.color,
-        isCustom: false
+        name: categoryName,
+        userId: user.uid
       });
-      console.log('Categoria base criada:', defaultCategory.name);
+      console.log('Categoria base criada:', categoryName);
     }
   } catch (error) {
     console.error('Erro ao inicializar categorias padrão:', error);
@@ -109,43 +87,62 @@ const initializeDefaultCategories = async (): Promise<void> => {
   }
 };
 
-// Adicionar nova categoria personalizada
-export const addCategory = async (categoryName: string, icon: string = 'Tag', color: string = '#64748b'): Promise<void> => {
+// Salvar categorias do usuário
+export const saveUserCategories = async (categories: string[]): Promise<void> => {
   const user = auth.currentUser;
   if (!user) throw new Error("Usuário não autenticado");
 
-  console.log('Adicionando categoria personalizada:', { categoryName, icon, color });
+  console.log('Salvando categorias:', categories);
 
   try {
-    const docId = await firestoreService.saveDocument('categories', {
-      name: categoryName,
-      userId: user.uid,
-      icon: icon,
-      color: color,
-      isCustom: true
-    });
-    console.log('Categoria personalizada adicionada com sucesso:', categoryName, 'ID:', docId);
+    // Primeiro, buscar categorias existentes para identificar quais remover
+    const existingCategories = await firestoreService.listDocuments(
+      'categories',
+      [['userId', '==', user.uid]]
+    );
+
+    // Remover categorias que não estão mais na lista
+    for (const existingCategory of existingCategories) {
+      if (!categories.includes(existingCategory.name)) {
+        await firestoreService.deleteDocument('categories', existingCategory.id);
+        console.log('Categoria removida:', existingCategory.name);
+      }
+    }
+
+    // Adicionar ou manter categorias
+    for (const categoryName of categories) {
+      const existingCategory = existingCategories.find(cat => cat.name === categoryName);
+      
+      if (!existingCategory) {
+        // Criar nova categoria
+        const docId = await firestoreService.saveDocument('categories', {
+          name: categoryName,
+          userId: user.uid
+        });
+        console.log('Nova categoria criada:', categoryName, 'com ID:', docId);
+      }
+    }
   } catch (error) {
-    console.error('Erro ao adicionar categoria:', error);
+    console.error('Erro ao salvar categorias:', error);
     throw error;
   }
 };
 
-// Atualizar categoria existente
-export const updateCategory = async (categoryId: string, updates: Partial<Category>): Promise<void> => {
+// Adicionar nova categoria
+export const addCategory = async (categoryName: string): Promise<void> => {
   const user = auth.currentUser;
   if (!user) throw new Error("Usuário não autenticado");
 
-  console.log('Atualizando categoria:', categoryId, updates);
+  console.log('Adicionando categoria:', categoryName);
 
   try {
-    await firestoreService.updateDocument('categories', categoryId, {
-      ...updates,
+    const docId = await firestoreService.saveDocument('categories', {
+      name: categoryName,
       userId: user.uid
     });
-    console.log('Categoria atualizada com sucesso:', categoryId);
+    console.log('Categoria adicionada com sucesso:', categoryName, 'ID:', docId);
   } catch (error) {
-    console.error('Erro ao atualizar categoria:', error);
+    console.error('Erro ao adicionar categoria:', error);
     throw error;
   }
 };
@@ -164,19 +161,11 @@ export const removeCategory = async (categoryName: string): Promise<void> => {
     );
 
     for (const category of categories) {
-      // Só permitir remoção de categorias personalizadas
-      if (category.isCustom) {
-        await firestoreService.deleteDocument('categories', category.id);
-        console.log('Categoria personalizada removida do Firestore:', category.id);
-      }
+      await firestoreService.deleteDocument('categories', category.id);
+      console.log('Categoria removida do Firestore:', category.id);
     }
   } catch (error) {
     console.error('Erro ao remover categoria:', error);
     throw error;
   }
-};
-
-// Função auxiliar para converter categorias para formato de string (compatibilidade)
-export const getCategoryNames = (categories: Category[]): string[] => {
-  return categories.map(cat => cat.name);
 };

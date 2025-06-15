@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Tag, 
@@ -35,23 +36,9 @@ export const DEFAULT_CATEGORIES: CategoryConfig[] = [
 interface CategoryIconProps {
   categoryName: string;
   className?: string;
-  customIcon?: string;
-  customColor?: string;
 }
 
-const CategoryIcon: React.FC<CategoryIconProps> = ({ 
-  categoryName, 
-  className = "w-4 h-4",
-  customIcon,
-  customColor
-}) => {
-  // Se há ícone personalizado, usar ele
-  if (customIcon && customColor) {
-    const IconComponent = getIconByName(customIcon);
-    return <IconComponent className={`${className}`} style={{ color: customColor }} />;
-  }
-
-  // Caso contrário, usar configuração padrão
+const CategoryIcon: React.FC<CategoryIconProps> = ({ categoryName, className = "w-4 h-4" }) => {
   const categoryConfig = DEFAULT_CATEGORIES.find(cat => cat.name === categoryName);
   
   if (!categoryConfig) {
@@ -60,24 +47,6 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({
   
   const IconComponent = categoryConfig.icon;
   return <IconComponent className={`${className} ${categoryConfig.color}`} />;
-};
-
-// Função auxiliar para obter ícone pelo nome
-const getIconByName = (iconName: string) => {
-  const iconMap: { [key: string]: React.ComponentType<any> } = {
-    'Tag': Tag,
-    'DollarSign': DollarSign,
-    'Briefcase': Briefcase,
-    'CreditCard': CreditCard,
-    'Home': Home,
-    'Utensils': Utensils,
-    'Car': Car,
-    'Heart': Heart,
-    'Gamepad2': Gamepad2,
-    'MoreHorizontal': MoreHorizontal
-  };
-  
-  return iconMap[iconName] || Tag;
 };
 
 export const getCategoryColor = (categoryName: string): string => {
@@ -120,5 +89,3 @@ export const getCategoryChartColor = (categoryName: string): string => {
 };
 
 export default CategoryIcon;
-
-export { getIconByName };
