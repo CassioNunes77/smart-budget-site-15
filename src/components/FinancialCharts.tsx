@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 interface Transaction {
@@ -21,10 +19,6 @@ interface FinancialChartsProps {
 }
 
 const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detailed = false }) => {
-  const [periodFilter, setPeriodFilter] = useState<string>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-
   const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#06b6d4'];
   const GRAY_COLORS = ['#9ca3af', '#6b7280'];
 
@@ -35,61 +29,22 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
     }).format(value);
   };
 
-  // Filtrar transações por período
-  const filterTransactionsByPeriod = () => {
-    let filtered = [...transactions];
-
-    if (periodFilter !== 'all') {
-      const now = new Date();
-      let startFilterDate = new Date();
-      
-      switch (periodFilter) {
-        case 'week':
-          startFilterDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          startFilterDate.setMonth(now.getMonth() - 1);
-          break;
-        case 'quarter':
-          startFilterDate.setMonth(now.getMonth() - 3);
-          break;
-        case 'year':
-          startFilterDate.setFullYear(now.getFullYear() - 1);
-          break;
-        case 'custom':
-          if (startDate && endDate) {
-            filtered = filtered.filter(t => {
-              const transactionDate = new Date(t.date);
-              return transactionDate >= new Date(startDate) && transactionDate <= new Date(endDate);
-            });
-          }
-          return filtered;
-      }
-      
-      filtered = filtered.filter(t => new Date(t.date) >= startFilterDate);
-    }
-
-    return filtered;
-  };
-
-  const filteredTransactions = filterTransactionsByPeriod();
-
   // Separar transações por status
   const getTransactionsByStatus = () => {
     const consolidated = {
-      income: filteredTransactions.filter(t => 
+      income: transactions.filter(t => 
         t.type === 'income' && (!t.status || t.status === 'received')
       ).reduce((sum, t) => sum + t.amount, 0),
-      expense: filteredTransactions.filter(t => 
+      expense: transactions.filter(t => 
         t.type === 'expense' && (!t.status || t.status === 'paid')
       ).reduce((sum, t) => sum + t.amount, 0)
     };
 
     const pending = {
-      income: filteredTransactions.filter(t => 
+      income: transactions.filter(t => 
         t.type === 'income' && t.status === 'unreceived'
       ).reduce((sum, t) => sum + t.amount, 0),
-      expense: filteredTransactions.filter(t => 
+      expense: transactions.filter(t => 
         t.type === 'expense' && t.status === 'unpaid'
       ).reduce((sum, t) => sum + t.amount, 0)
     };
@@ -103,7 +58,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
   const incomeByCategory = React.useMemo(() => {
     const categoryMap = new Map<string, number>();
     
-    filteredTransactions
+    transactions
       .filter(t => t.type === 'income')
       .forEach(transaction => {
         const existing = categoryMap.get(transaction.category) || 0;
@@ -114,13 +69,13 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       name: category,
       value: amount
     }));
-  }, [filteredTransactions]);
+  }, [transactions]);
 
   // Dados para gráfico de despesas por categoria
   const expenseByCategory = React.useMemo(() => {
     const categoryMap = new Map<string, number>();
     
-    filteredTransactions
+    transactions
       .filter(t => t.type === 'expense')
       .forEach(transaction => {
         const existing = categoryMap.get(transaction.category) || 0;
@@ -131,7 +86,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       name: category,
       value: amount
     }));
-  }, [filteredTransactions]);
+  }, [transactions]);
 
   // Dados para gráfico de pizza (incluindo pendentes)
   const pieData = [
@@ -166,7 +121,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       expensePending: number;
     }>();
     
-    filteredTransactions.forEach(transaction => {
+    transactions.forEach(transaction => {
       const existing = categoryMap.get(transaction.category) || { 
         incomeConsolidated: 0, 
         incomePending: 0,
@@ -201,7 +156,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       'Despesas Consolidadas': amounts.expenseConsolidated,
       'Despesas Pendentes': amounts.expensePending,
     }));
-  }, [filteredTransactions]);
+  }, [transactions]);
 
   // Dados mensais (incluindo pendentes) - com ordenação correta
   const monthlyData = React.useMemo(() => {
@@ -212,7 +167,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       expensePending: number;
     }>();
     
-    filteredTransactions.forEach(transaction => {
+    transactions.forEach(transaction => {
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
@@ -256,60 +211,11 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       }))
       .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
       .slice(-6);
-  }, [filteredTransactions]);
+  }, [transactions]);
 
-  if (filteredTransactions.length === 0) {
+  if (transactions.length === 0) {
     return (
       <div className="space-y-6">
-        {detailed && (
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Filtros de Período</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label>Período</Label>
-                  <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="week">Última semana</SelectItem>
-                      <SelectItem value="month">Último mês</SelectItem>
-                      <SelectItem value="quarter">Últimos 3 meses</SelectItem>
-                      <SelectItem value="year">Último ano</SelectItem>
-                      <SelectItem value="custom">Personalizado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {periodFilter === 'custom' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Data Inicial</Label>
-                      <Input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Data Final</Label>
-                      <Input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="shadow-lg">
             <CardHeader>
@@ -326,55 +232,6 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
   return (
     <div className="space-y-6">
-      {detailed && (
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Filtros de Período</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Período</Label>
-                <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="week">Última semana</SelectItem>
-                    <SelectItem value="month">Último mês</SelectItem>
-                    <SelectItem value="quarter">Últimos 3 meses</SelectItem>
-                    <SelectItem value="year">Último ano</SelectItem>
-                    <SelectItem value="custom">Personalizado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {periodFilter === 'custom' && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Data Inicial</Label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Data Final</Label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Gráfico de Pizza */}
         <Card className="shadow-lg">

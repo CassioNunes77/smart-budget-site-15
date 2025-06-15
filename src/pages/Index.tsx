@@ -761,12 +761,22 @@ const Dashboard: React.FC = () => {
       case 'reports':
         return (
           <div className="space-y-6 animate-fade-in">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Relatórios</h1>
-              <p className="text-muted-foreground mt-1">Análise detalhada das suas finanças</p>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">Relatórios</h1>
+                <p className="text-muted-foreground mt-1">Análise detalhada das suas finanças</p>
+              </div>
+              <DashboardPeriodFilter
+                selectedPeriod={dashboardPeriod}
+                selectedYear={dashboardYear}
+                onPeriodChange={(period, year) => {
+                  setDashboardPeriod(period);
+                  if (year) setDashboardYear(year);
+                }}
+              />
             </div>
 
-            <FinancialCharts transactions={transactions} detailed={true} />
+            <FinancialCharts transactions={filteredTransactions} detailed={true} />
 
             <DownloadManager transactions={transactions} user={user} />
 
