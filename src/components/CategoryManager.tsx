@@ -157,7 +157,7 @@ const getDefaultCategoryFormat = (defaultCategory: any, index: number): Category
 };
 
 const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) => {
-  const { categories: firebaseCategories, loading, addCategory, removeCategory, updateCategories } = useFirebaseCategories();
+  const { categories: firebaseCategories, loading, addCategory, removeCategory, updateCategories, error } = useFirebaseCategories();
   const [categoryList, setCategoryList] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -197,29 +197,19 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
 
   const handleSaveCategory = async (category: Category) => {
     try {
-      // Se é categoria base, apenas atualizar localmente (personalização do usuário)
-      if (category.isBase) {
-        const updatedCategories = categoryList.map(cat => 
-          cat.id === category.id ? category : cat
-        );
-        setCategoryList(updatedCategories);
-        
-        toast({
-          title: "Categoria personalizada!",
-          description: "Sua personalização da categoria base foi salva.",
-        });
-      } else {
-        // Categoria personalizada - atualizar no Firebase
-        const updatedCategoryNames = categoryList.map(cat => 
-          cat.id === category.id ? category.name : cat.name
-        );
-        await updateCategories(['Sem categoria', ...updatedCategoryNames]);
-        
-        toast({
-          title: "Categoria atualizada!",
-          description: "As alterações foram salvas com sucesso.",
-        });
-      }
+      console.log('Salvando categoria:', category);
+      
+      // Para qualquer modificação de categoria, apenas atualizar localmente
+      // As modificações só afetam a conta do usuário atual
+      const updatedCategories = categoryList.map(cat => 
+        cat.id === category.id ? category : cat
+      );
+      setCategoryList(updatedCategories);
+      
+      toast({
+        title: "Categoria personalizada!",
+        description: "Sua personalização foi salva com sucesso.",
+      });
       
       setEditingId(null);
     } catch (error) {
@@ -237,7 +227,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
       const categoryToDelete = categoryList.find(cat => cat.id === id);
       if (!categoryToDelete) return;
 
-      // Categorias base não podem ser deletadas, apenas resetadas
+      // Categorias base não podem ser deletadas
       if (categoryToDelete.isBase) {
         toast({
           title: "Categoria base",
@@ -268,27 +258,45 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
   };
 
   const handleAddCategory = async () => {
-    if (newCategoryName.trim()) {
-      try {
-        await addCategory(newCategoryName.trim());
-        
-        setNewCategoryName('');
-        setNewCategoryIcon('Tag');
-        setNewCategoryColor(colorOptions[0]);
-        setShowNewCategory(false);
-        
-        toast({
-          title: "Categoria adicionada!",
-          description: "Nova categoria criada com sucesso.",
-        });
-      } catch (error) {
-        console.error('Erro ao adicionar categoria:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível criar a categoria.",
-          variant: "destructive"
-        });
-      }
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Por favor, digite um nome para a categoria.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar se a categoria já existe
+    if (firebaseCategories.includes(newCategoryName.trim())) {
+      toast({
+        title: "Categoria já existe",
+        description: "Uma categoria com este nome já foi criada.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log('Adicionando nova categoria:', newCategoryName.trim());
+      await addCategory(newCategoryName.trim());
+      
+      setNewCategoryName('');
+      setNewCategoryIcon('Tag');
+      setNewCategoryColor(colorOptions[0]);
+      setShowNewCategory(false);
+      
+      toast({
+        title: "Categoria adicionada!",
+        description: "Nova categoria criada com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar categoria:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a categoria. Tente novamente.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -302,6 +310,16 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
       <div className="space-y-6 animate-fade-in">
         <div className="text-center py-8 text-muted-foreground">
           <p>Carregando categorias...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-8 text-destructive">
+          <p>Erro ao carregar categorias: {error}</p>
         </div>
       </div>
     );
@@ -336,6 +354,11 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="Digite o nome da categoria"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddCategory();
+                  }
+                }}
               />
             </div>
             
@@ -462,7 +485,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
         })}
       </div>
 
-      {categoryList.length === 0 && (
+      {categoryList.length === 0 && !loading && (
         <div className="text-center py-8 text-muted-foreground">
           <p>Nenhuma categoria encontrada. Adicione sua primeira categoria personalizada!</p>
         </div>
@@ -502,7 +525,11 @@ const CategoryEditForm: React.FC<CategoryEditFormProps> = ({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Nome da categoria"
-        disabled={category.isBase}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+            handleSave();
+          }
+        }}
       />
       
       <div className="grid grid-cols-6 gap-1 max-h-20 overflow-y-auto">
