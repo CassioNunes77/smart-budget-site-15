@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,6 +80,18 @@ interface CategoryManagerProps {
   onCategoryDeleted?: (deletedCategory: string) => void;
 }
 
+// Mapear categorias padrão para formato Category
+const getDefaultCategoryFormat = (defaultCategory: any, index: number): Category => {
+  const iconName = iconOptions.find(opt => opt.icon === defaultCategory.icon)?.name || 'Tag';
+  return {
+    id: `default-${index}`,
+    name: defaultCategory.name,
+    icon: iconName,
+    color: colorOptions[index % colorOptions.length],
+    isBase: true
+  };
+};
+
 const iconOptions = [
   { name: 'DollarSign', icon: DollarSign },
   { name: 'Home', icon: Home },
@@ -144,18 +155,6 @@ const colorOptions = [
   '#64748b', '#6b7280', '#374151', '#111827'
 ];
 
-// Mapear categorias padrão para formato Category
-const getDefaultCategoryFormat = (defaultCategory: any, index: number): Category => {
-  const iconName = iconOptions.find(opt => opt.icon === defaultCategory.icon)?.name || 'Tag';
-  return {
-    id: `default-${index}`,
-    name: defaultCategory.name,
-    icon: iconName,
-    color: colorOptions[index % colorOptions.length],
-    isBase: true
-  };
-};
-
 const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) => {
   const { categories: firebaseCategories, loading, addCategory, removeCategory, updateCategories, error } = useFirebaseCategories();
   const [categoryList, setCategoryList] = useState<Category[]>([]);
@@ -164,6 +163,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
   const [newCategoryIcon, setNewCategoryIcon] = useState('Tag');
   const [newCategoryColor, setNewCategoryColor] = useState(colorOptions[0]);
   const [showNewCategory, setShowNewCategory] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Carregar e formatar categorias
   useEffect(() => {
@@ -258,6 +258,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
   };
 
   const handleAddCategory = async () => {
+    // Validação básica
     if (!newCategoryName.trim()) {
       toast({
         title: "Nome obrigatório",
@@ -267,8 +268,14 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
       return;
     }
 
-    // Verificar se a categoria já existe
-    if (firebaseCategories.includes(newCategoryName.trim())) {
+    const trimmedName = newCategoryName.trim();
+
+    // Verificar se a categoria já existe (incluindo verificação case-insensitive)
+    const categoryExists = firebaseCategories.some(cat => 
+      cat.toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (categoryExists) {
       toast({
         title: "Categoria já existe",
         description: "Uma categoria com este nome já foi criada.",
@@ -277,27 +284,63 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
       return;
     }
 
+    setIsCreating(true);
+
     try {
-      console.log('Adicionando nova categoria:', newCategoryName.trim());
-      await addCategory(newCategoryName.trim());
+      console.log('Tentando adicionar nova categoria:', trimmedName);
       
+      // Tentar adicionar categoria via Firebase
+      await addCategory(trimmedName);
+      
+      // Limpar formulário apenas em caso de sucesso
       setNewCategoryName('');
       setNewCategoryIcon('Tag');
       setNewCategoryColor(colorOptions[0]);
       setShowNewCategory(false);
       
       toast({
-        title: "Categoria adicionada!",
-        description: "Nova categoria criada com sucesso.",
+        title: "Categoria criada!",
+        description: `A categoria "${trimmedName}" foi adicionada com sucesso.`,
       });
-    } catch (error) {
-      console.error('Erro ao adicionar categoria:', error);
+
+      console.log('Categoria adicionada com sucesso:', trimmedName);
+      
+    } catch (error: any) {
+      console.error('Erro detalhado ao adicionar categoria:', error);
+      
+      let errorMessage = "Não foi possível criar a categoria. Tente novamente.";
+      
+      // Verificar tipos específicos de erro
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.code) {
+        switch (error.code) {
+          case 'permission-denied':
+            errorMessage = "Permissão negada. Verifique se você está logado.";
+            break;
+          case 'network-request-failed':
+            errorMessage = "Erro de conexão. Verifique sua internet.";
+            break;
+          default:
+            errorMessage = `Erro: ${error.code}`;
+        }
+      }
+      
       toast({
-        title: "Erro",
-        description: "Não foi possível criar a categoria. Tente novamente.",
+        title: "Erro na criação",
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsCreating(false);
     }
+  };
+
+  const handleCancelNewCategory = () => {
+    setNewCategoryName('');
+    setNewCategoryIcon('Tag');
+    setNewCategoryColor(colorOptions[0]);
+    setShowNewCategory(false);
   };
 
   const getIcon = (iconName: string) => {
@@ -320,6 +363,9 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
       <div className="space-y-6 animate-fade-in">
         <div className="text-center py-8 text-destructive">
           <p>Erro ao carregar categorias: {error}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Tentar novamente
+          </Button>
         </div>
       </div>
     );
@@ -335,6 +381,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
         <Button 
           onClick={() => setShowNewCategory(true)}
           className="gap-2"
+          disabled={showNewCategory}
         >
           <Plus className="w-4 h-4" />
           Nova Categoria
@@ -354,8 +401,9 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="Digite o nome da categoria"
+                disabled={isCreating}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !isCreating) {
                     handleAddCategory();
                   }
                 }}
@@ -374,6 +422,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                       size="sm"
                       className="p-2 h-10 w-10"
                       onClick={() => setNewCategoryIcon(option.name)}
+                      disabled={isCreating}
                     >
                       <IconComponent className="w-4 h-4" />
                     </Button>
@@ -393,17 +442,25 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
                     className={`w-8 h-8 p-0 border-2 ${newCategoryColor === color ? 'border-foreground' : 'border-border'}`}
                     style={{ backgroundColor: color }}
                     onClick={() => setNewCategoryColor(color)}
+                    disabled={isCreating}
                   />
                 ))}
               </div>
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddCategory}>
+              <Button 
+                onClick={handleAddCategory}
+                disabled={isCreating || !newCategoryName.trim()}
+              >
                 <Save className="w-4 h-4 mr-2" />
-                Salvar
+                {isCreating ? 'Criando...' : 'Salvar'}
               </Button>
-              <Button variant="outline" onClick={() => setShowNewCategory(false)}>
+              <Button 
+                variant="outline" 
+                onClick={handleCancelNewCategory}
+                disabled={isCreating}
+              >
                 <X className="w-4 h-4 mr-2" />
                 Cancelar
               </Button>
