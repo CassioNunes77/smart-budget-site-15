@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,16 +48,19 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         return;
       }
 
-      const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+      // Processar cabeçalho com mais flexibilidade
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, '').replace(/'/g, ''));
+      console.log('Cabeçalho detectado:', header);
+      
       const transactions: Transaction[] = [];
 
-      // Mapear colunas esperadas
+      // Mapear colunas esperadas com mais variações
       const expectedColumns = {
-        date: ['data', 'date', 'dt'],
-        type: ['tipo', 'type', 'categoria_tipo'],
-        amount: ['valor', 'amount', 'quantia', 'money'],
-        description: ['descricao', 'description', 'desc', 'descricão'],
-        category: ['categoria', 'category', 'cat']
+        date: ['data', 'date', 'dt', 'data_transacao', 'data_lancamento'],
+        type: ['tipo', 'type', 'categoria_tipo', 'operacao', 'movimento'],
+        amount: ['valor', 'amount', 'quantia', 'money', 'montante', 'preco'],
+        description: ['descricao', 'description', 'desc', 'descricão', 'historico', 'detalhes'],
+        category: ['categoria', 'category', 'cat', 'classificacao']
       };
 
       const columnMapping: { [key: string]: number } = {};
@@ -66,14 +70,22 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         const index = header.findIndex(h => variations.includes(h));
         if (index !== -1) {
           columnMapping[key] = index;
+          console.log(`Coluna ${key} encontrada no índice ${index}: ${header[index]}`);
         }
       });
 
+      console.log('Mapeamento de colunas:', columnMapping);
+
       // Verificar se as colunas essenciais existem
-      if (!columnMapping.date || columnMapping.amount === undefined || !columnMapping.description) {
+      if (columnMapping.date === undefined || columnMapping.amount === undefined || columnMapping.description === undefined) {
+        const missingColumns = [];
+        if (columnMapping.date === undefined) missingColumns.push('Data');
+        if (columnMapping.amount === undefined) missingColumns.push('Valor');
+        if (columnMapping.description === undefined) missingColumns.push('Descrição');
+        
         setResult({ 
           success: false, 
-          message: 'CSV deve conter pelo menos as colunas: Data, Valor e Descrição. Colunas encontradas: ' + header.join(', ')
+          message: `Colunas obrigatórias não encontradas: ${missingColumns.join(', ')}. Colunas disponíveis: ${header.join(', ')}`
         });
         setIsProcessing(false);
         return;
@@ -81,9 +93,11 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
 
       // Processar cada linha
       for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, '').replace(/'/g, ''));
+        console.log(`Linha ${i}:`, values);
         
         if (values.length < Math.max(...Object.values(columnMapping)) + 1) {
+          console.log(`Linha ${i} pulada: número insuficiente de colunas`);
           continue; // Pular linhas malformadas
         }
 
@@ -92,6 +106,7 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         const description = values[columnMapping.description];
         
         if (!dateStr || !amountStr || !description) {
+          console.log(`Linha ${i} pulada: dados essenciais faltando`);
           continue; // Pular linhas com dados essenciais faltando
         }
 
@@ -103,16 +118,19 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         } else if (dateStr.includes('-')) {
           date = new Date(dateStr);
         } else {
+          console.log(`Linha ${i} pulada: formato de data não reconhecido`);
           continue; // Formato de data não reconhecido
         }
 
         if (isNaN(date.getTime())) {
+          console.log(`Linha ${i} pulada: data inválida`);
           continue; // Data inválida
         }
 
         // Processar valor
         const amount = parseFloat(amountStr.replace(/[^\d.,-]/g, '').replace(',', '.'));
         if (isNaN(amount)) {
+          console.log(`Linha ${i} pulada: valor inválido`);
           continue; // Valor inválido
         }
 
@@ -149,6 +167,7 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         };
 
         transactions.push(transaction);
+        console.log(`Transação ${i} processada:`, transaction);
       }
 
       if (transactions.length === 0) {
@@ -162,6 +181,7 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         });
       }
     } catch (error) {
+      console.error('Erro ao processar CSV:', error);
       setResult({ success: false, message: 'Erro ao processar o arquivo CSV. Verifique o formato.' });
     } finally {
       setIsProcessing(false);
@@ -172,7 +192,7 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Upload className="w-4 h-4" />
           Importar CSV
@@ -200,7 +220,7 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
           </TooltipProvider>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 pt-0">
+      <CardContent className="space-y-2 pt-0">
         <div className="flex items-center gap-3">
           <Label htmlFor="csv-upload" className="text-sm whitespace-nowrap">Selecionar arquivo CSV</Label>
           <Input
