@@ -83,7 +83,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </header>
 
       {/* Hero Section - Seção Principal */}
-      <section className="relative z-10 px-4 md:px-6 py-8 md:py-12 mb-32">
+      <section className="relative z-10 px-4 md:px-6 py-8 md:py-12 mb-20">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             
@@ -223,7 +223,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* Seção de Benefícios */}
-      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6 mb-32">
+      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6 mb-20">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal direction="up" delay={200}>
             <div className="text-center mb-12 md:mb-16">
@@ -283,29 +283,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* Seção de Testimoniais */}
-      <section className="relative z-10 py-24 md:py-32 px-4 md:px-6 bg-black/20 backdrop-blur-sm mb-32">
-        <ParallaxSection speed={0.3}>
-          <div className="max-w-7xl mx-auto">
-            <ScrollReveal direction="up" delay={200}>
-              <div className="text-center mb-12 md:mb-16">
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
-                  O que nossos usuários dizem
-                </h2>
-                <p className="text-green-200 text-base md:text-lg">
-                  Histórias reais de transformação financeira
-                </p>
-              </div>
-            </ScrollReveal>
+      <section className="relative z-20 py-16 md:py-20 px-4 md:px-6 bg-black/30 backdrop-blur-sm mb-20">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal direction="up" delay={200}>
+            <div className="text-center mb-12 md:mb-16">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
+                O que nossos usuários dizem
+              </h2>
+              <p className="text-green-200 text-base md:text-lg">
+                Histórias reais de transformação financeira
+              </p>
+            </div>
+          </ScrollReveal>
 
-            <ScrollReveal direction="up" delay={400}>
-              <TestimonialCarousel />
-            </ScrollReveal>
-          </div>
-        </ParallaxSection>
+          <ScrollReveal direction="up" delay={400}>
+            <TestimonialCarousel />
+          </ScrollReveal>
+        </div>
       </section>
 
       {/* CTA Final */}
-      <section className="relative z-10 py-24 md:py-32 px-4 md:px-6">
+      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <ScrollReveal direction="up" delay={200}>
             <div className="bg-gradient-to-r from-green-500/30 to-emerald-500/30 backdrop-blur-md p-8 md:p-12 rounded-3xl border border-green-300/40 shadow-2xl">
