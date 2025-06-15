@@ -1,11 +1,11 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Transaction {
   id: string;
@@ -176,6 +176,28 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         <CardTitle className="flex items-center gap-2">
           <Upload className="w-5 h-5" />
           Importar CSV
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm p-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Formato esperado do CSV:</h4>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li><strong>Data:</strong> DD/MM/AAAA ou AAAA-MM-DD</li>
+                    <li><strong>Valor:</strong> Números com ponto ou vírgula decimal</li>
+                    <li><strong>Descrição:</strong> Texto descritivo da transação</li>
+                    <li><strong>Tipo:</strong> "receita/income/entrada" ou "despesa/expense/saída" (opcional)</li>
+                    <li><strong>Categoria:</strong> Nome da categoria existente (opcional)</li>
+                  </ul>
+                  <p className="text-xs font-medium">
+                    <strong>Exemplo:</strong> Data,Tipo,Valor,Descrição,Categoria
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -212,20 +234,6 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
             </AlertDescription>
           </Alert>
         )}
-
-        <div className="text-sm text-muted-foreground space-y-2">
-          <h4 className="font-medium">Formato esperado do CSV:</h4>
-          <ul className="list-disc list-inside space-y-1 text-xs">
-            <li><strong>Data:</strong> DD/MM/AAAA ou AAAA-MM-DD</li>
-            <li><strong>Valor:</strong> Números com ponto ou vírgula decimal</li>
-            <li><strong>Descrição:</strong> Texto descritivo da transação</li>
-            <li><strong>Tipo:</strong> "receita/income/entrada" ou "despesa/expense/saída" (opcional)</li>
-            <li><strong>Categoria:</strong> Nome da categoria existente (opcional)</li>
-          </ul>
-          <p className="text-xs">
-            <strong>Exemplo:</strong> Data,Tipo,Valor,Descrição,Categoria
-          </p>
-        </div>
       </CardContent>
     </Card>
   );
