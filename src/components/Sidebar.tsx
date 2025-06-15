@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -8,7 +9,7 @@ import {
   LogOut, 
   Menu,
   X,
-  DollarSign,
+  TreePine,
   User,
   Tag,
   Crown,
@@ -90,11 +91,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
         <div className="p-6 border-b border-sidebar-border shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-primary-foreground" />
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
+                <TreePine className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-sidebar-foreground">Fluxo Fácil</h1>
+                <h1 className="text-lg font-bold text-sidebar-foreground">PINEE</h1>
                 <p className="text-xs text-sidebar-foreground/60">v0.3.5 Beta</p>
               </div>
             </div>
@@ -112,7 +113,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
         {/* User info */}
         <div className="p-4 border-b border-sidebar-border shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center overflow-hidden">
               {userPhotoURL ? (
                 <img 
                   src={userPhotoURL} 
@@ -120,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-sm font-medium text-primary">
+                <span className="text-sm font-medium text-green-600">
                   {userName.charAt(0).toUpperCase()}
                 </span>
               )}
@@ -144,8 +145,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
               variant={currentPage === item.id ? 'secondary' : 'ghost'}
               className={`w-full justify-start gap-3 h-11 ${
                 currentPage === item.id 
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  ? 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50' 
+                  : 'text-sidebar-foreground hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-900/20 dark:hover:text-green-400'
               }`}
               onClick={() => {
                 onPageChange(item.id);
@@ -163,15 +164,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
 
         {/* Premium banner */}
         <div className="p-4 border-t border-sidebar-border shrink-0">
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-3 border border-primary/20">
+          <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-lg p-3 border border-green-500/20">
             <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-4 h-4 text-primary" />
+              <Crown className="w-4 h-4 text-green-600" />
               <span className="text-sm font-medium text-sidebar-foreground">Premium</span>
             </div>
             <p className="text-xs text-sidebar-foreground/70 mb-3">
               Desbloqueie recursos avançados
             </p>
-            <Button size="sm" className="w-full premium-button text-xs" onClick={onShowPremiumModal}>
+            <Button size="sm" className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs" onClick={onShowPremiumModal}>
               Atualizar
             </Button>
           </div>
@@ -181,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
         <div className="p-4 border-t border-sidebar-border shrink-0">
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-900/20 dark:hover:text-green-400"
             onClick={onLogout}
           >
             <LogOut className="w-5 h-5" />
@@ -194,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
       <Button
         variant="outline"
         size="sm"
-        className="lg:hidden fixed top-4 left-4 z-60 bg-background/80 backdrop-blur-sm"
+        className="lg:hidden fixed top-4 left-4 z-60 bg-background/80 backdrop-blur-sm border-green-200 hover:bg-green-50 hover:border-green-300"
         onClick={() => setIsSidebarOpen(true)}
       >
         <Menu className="w-4 h-4" />
