@@ -125,7 +125,7 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Versão</label>
-              <p className="text-foreground">v0.3.5 Beta</p>
+              <p className="text-foreground">v0.2.1 Alpha</p>
             </div>
             <Separator />
             <div>
