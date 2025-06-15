@@ -51,7 +51,7 @@ const ToggleGroupItem = React.forwardRef<
       {...props}
     >
       {children}
-    </ToggleGroupItem>
+    </ToggleGroupPrimitive.Item>
   )
 })
 
