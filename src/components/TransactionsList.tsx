@@ -1,11 +1,11 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, TrendingUp, TrendingDown, Filter, CheckCircle, XCircle, Clock, Tag, Upload } from 'lucide-react';
+import { Edit, Trash2, TrendingUp, TrendingDown, Filter, CheckCircle, Clock, Upload, Search } from 'lucide-react';
 import CategoryIcon, { getCategoryBadgeColor } from '@/components/CategoryIcon';
 
 interface Transaction {
@@ -41,10 +41,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 }) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -66,10 +64,6 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 
   const getCategoryColor = (category: string) => {
     return getCategoryBadgeColor(category);
-  };
-
-  const getCategoryIcon = (category: string) => {
-    return CategoryIcon;
   };
 
   const getStatusColor = (transaction: Transaction) => {
@@ -138,37 +132,12 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       filtered = filtered.filter(t => t.category === categoryFilter);
     }
 
-    // Filtro por período
-    if (periodFilter !== 'all') {
-      const now = new Date();
-      let startDate = new Date();
-      
-      switch (periodFilter) {
-        case 'week':
-          startDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          startDate.setMonth(now.getMonth() - 1);
-          break;
-        case 'quarter':
-          startDate.setMonth(now.getMonth() - 3);
-          break;
-        case 'year':
-          startDate.setFullYear(now.getFullYear() - 1);
-          break;
-        case 'custom':
-          if (startDate && endDate) {
-            filtered = filtered.filter(t => {
-              const transactionDate = new Date(t.date);
-              return transactionDate >= new Date(startDate) && transactionDate <= new Date(endDate);
-            });
-          }
-          break;
-      }
-      
-      if (periodFilter !== 'custom') {
-        filtered = filtered.filter(t => new Date(t.date) >= startDate);
-      }
+    // Filtro por busca
+    if (searchTerm) {
+      filtered = filtered.filter(t => 
+        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     return filtered;
@@ -187,202 +156,158 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
   return (
     <div className="space-y-4">
       {showFilters && (
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filtros
-              </CardTitle>
-              {showUpload && (
-                <div>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="csv-upload"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById('csv-upload')?.click()}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload CSV
-                  </Button>
-                </div>
-              )}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Filtros:</span>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="income">Receitas</SelectItem>
-                    <SelectItem value="expense">Despesas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="income">Receitas</SelectItem>
+                <SelectItem value="expense">Despesas</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="confirmed">Confirmados</SelectItem>
-                    <SelectItem value="pending">Pendentes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="confirmed">Confirmados</SelectItem>
+                <SelectItem value="pending">Pendentes</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Período</Label>
-                <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="week">Última semana</SelectItem>
-                    <SelectItem value="month">Último mês</SelectItem>
-                    <SelectItem value="quarter">Últimos 3 meses</SelectItem>
-                    <SelectItem value="year">Último ano</SelectItem>
-                    <SelectItem value="custom">Personalizado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {periodFilter === 'custom' && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Data Inicial</Label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Data Final</Label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Categorias</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-48"
+              />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {showUpload && (
+            <div>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="csv-upload"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById('csv-upload')?.click()}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload CSV
+              </Button>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="space-y-3">
-        {filteredTransactions.map((transaction) => {
-          const CategoryIcon = getCategoryIcon(transaction.category);
-          return (
-            <div
-              key={transaction.id}
-              className="flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:border-border/60 hover:shadow-md transition-all duration-200"
-            >
-              <div className="flex items-center space-x-4 flex-1">
-                <div className={`p-2 rounded-full ${
-                  transaction.type === 'income' 
-                    ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                    : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                }`}>
-                  {transaction.type === 'income' ? (
-                    <TrendingUp className="w-5 h-5" />
-                  ) : (
-                    <TrendingDown className="w-5 h-5" />
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-medium text-foreground truncate">
-                      {transaction.description}
-                    </h3>
-                    <Badge className={`text-xs flex items-center gap-1 ${getCategoryColor(transaction.category)}`}>
-                      <CategoryIcon categoryName={transaction.category} className="w-3 h-3" />
-                      {transaction.category}
-                    </Badge>
-                    <Badge 
-                      className={`text-xs cursor-pointer transition-colors ${getStatusColor(transaction)}`}
-                      onClick={() => toggleStatus(transaction)}
-                    >
-                      {getStatusIcon(transaction)}
-                      <span className="ml-1">{getStatusText(transaction)}</span>
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDate(transaction.date)}
-                  </p>
-                </div>
-                
-                <div className="text-right">
-                  <p className={`font-semibold text-lg ${
-                    transaction.type === 'income' 
-                      ? 'text-emerald-600 dark:text-emerald-400' 
-                      : 'text-red-600 dark:text-red-400'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                  </p>
-                </div>
+        {filteredTransactions.map((transaction) => (
+          <div
+            key={transaction.id}
+            className="flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:border-border/60 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-center space-x-4 flex-1">
+              <div className={`p-2 rounded-full ${
+                transaction.type === 'income' 
+                  ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                  : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+              }`}>
+                {transaction.type === 'income' ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : (
+                  <TrendingDown className="w-5 h-5" />
+                )}
               </div>
               
-              <div className="flex items-center space-x-2 ml-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEdit(transaction)}
-                  className="text-primary hover:text-primary/80 hover:bg-primary/10"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-                      onDelete(transaction.id);
-                    }
-                  }}
-                  className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="font-medium text-foreground truncate">
+                    {transaction.description}
+                  </h3>
+                  <Badge className={`text-xs flex items-center gap-1 ${getCategoryColor(transaction.category)}`}>
+                    <CategoryIcon categoryName={transaction.category} className="w-3 h-3" />
+                    {transaction.category}
+                  </Badge>
+                  <Badge 
+                    className={`text-xs cursor-pointer transition-colors ${getStatusColor(transaction)}`}
+                    onClick={() => toggleStatus(transaction)}
+                  >
+                    {getStatusIcon(transaction)}
+                    <span className="ml-1">{getStatusText(transaction)}</span>
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(transaction.date)}
+                </p>
+              </div>
+              
+              <div className="text-right">
+                <p className={`font-semibold text-lg ${
+                  transaction.type === 'income' 
+                    ? 'text-emerald-600 dark:text-emerald-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                </p>
               </div>
             </div>
-          );
-        })}
+            
+            <div className="flex items-center space-x-2 ml-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(transaction)}
+                className="text-primary hover:text-primary/80 hover:bg-primary/10"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+                    onDelete(transaction.id);
+                  }
+                }}
+                className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
