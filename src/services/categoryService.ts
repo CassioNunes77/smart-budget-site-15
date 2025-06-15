@@ -1,4 +1,3 @@
-
 import firestoreService from './firestoreService';
 import { auth } from './firebase';
 import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
@@ -20,7 +19,7 @@ export const getUserCategories = async (): Promise<string[]> => {
   try {
     console.log('Buscando categorias para usuário:', user.uid);
     
-    // Buscar apenas pelo userId, sem ordenação complexa para evitar problemas de índice
+    // Buscar categorias do usuário no Firestore
     const categories = await firestoreService.listDocuments(
       'categories', 
       [['userId', '==', user.uid]]
@@ -28,24 +27,63 @@ export const getUserCategories = async (): Promise<string[]> => {
     
     console.log('Categorias encontradas no Firestore:', categories);
     
-    // Ordenar por nome localmente
-    const sortedCategories = categories.sort((a, b) => a.name.localeCompare(b.name));
-    const categoryNames = sortedCategories.map(cat => cat.name);
-    
-    // Se não há categorias no Firestore, criar as categorias padrão
-    if (categoryNames.length === 0) {
-      console.log('Nenhuma categoria encontrada, criando categorias padrão');
+    // Se não há categorias no Firestore, criar as categorias padrão para este usuário
+    if (categories.length === 0) {
+      console.log('Nenhuma categoria encontrada, criando categorias padrão para o usuário');
       const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
-      await saveUserCategories(defaultCategoryNames);
+      await initializeDefaultCategories(defaultCategoryNames);
       return defaultCategoryNames;
     }
     
+    // Verificar se todas as categorias base estão presentes
+    const categoryNames = categories.map(cat => cat.name);
+    const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
+    const missingCategories = defaultCategoryNames.filter(name => !categoryNames.includes(name));
+    
+    // Se faltam categorias base, adicionar as que estão faltando
+    if (missingCategories.length > 0) {
+      console.log('Categorias base faltando, adicionando:', missingCategories);
+      for (const categoryName of missingCategories) {
+        await firestoreService.saveDocument('categories', {
+          name: categoryName,
+          userId: user.uid
+        });
+      }
+      // Recarregar categorias após adicionar as faltantes
+      const updatedCategories = await firestoreService.listDocuments(
+        'categories', 
+        [['userId', '==', user.uid]]
+      );
+      return updatedCategories.map(cat => cat.name).sort();
+    }
+    
     console.log(`${categoryNames.length} categorias processadas:`, categoryNames);
-    return categoryNames;
+    return categoryNames.sort();
   } catch (error) {
     console.error('Erro ao buscar categorias:', error);
     // Em caso de erro, retornar categorias padrão
     return DEFAULT_CATEGORIES.map(cat => cat.name);
+  }
+};
+
+// Inicializar categorias padrão para um usuário
+const initializeDefaultCategories = async (categories: string[]): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Usuário não autenticado");
+
+  console.log('Inicializando categorias padrão para usuário:', user.uid);
+
+  try {
+    for (const categoryName of categories) {
+      await firestoreService.saveDocument('categories', {
+        name: categoryName,
+        userId: user.uid
+      });
+      console.log('Categoria base criada:', categoryName);
+    }
+  } catch (error) {
+    console.error('Erro ao inicializar categorias padrão:', error);
+    throw error;
   }
 };
 

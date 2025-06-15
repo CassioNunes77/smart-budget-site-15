@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   getUserCategories,
@@ -46,16 +45,20 @@ export const useFirebaseCategories = () => {
       }
     };
 
-    // Aguardar um pouco para garantir que o usuário esteja completamente autenticado
-    if (user) {
-      const timeoutId = setTimeout(() => {
-        loadCategories();
-      }, 100);
-      return () => clearTimeout(timeoutId);
-    } else {
-      loadCategories();
-    }
+    loadCategories();
   }, [user]);
+
+  // Recarregar categorias
+  const reloadCategories = async () => {
+    if (!user) return;
+    
+    try {
+      const data = await getUserCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error('Erro ao recarregar categorias:', err);
+    }
+  };
 
   // Salvar todas as categorias
   const updateCategories = async (newCategories: string[]) => {
@@ -74,11 +77,8 @@ export const useFirebaseCategories = () => {
     try {
       console.log('Adicionando categoria:', categoryName);
       await addCategoryService(categoryName);
-      
-      // Recarregar categorias após adicionar
-      const updatedCategories = await getUserCategories();
-      setCategories(updatedCategories);
-      console.log('Categorias atualizadas após adicionar:', updatedCategories);
+      await reloadCategories(); // Recarregar após adicionar
+      console.log('Categoria adicionada e lista recarregada');
     } catch (err) {
       console.error('Erro ao adicionar categoria:', err);
       throw err;
@@ -90,11 +90,8 @@ export const useFirebaseCategories = () => {
     try {
       console.log('Removendo categoria:', categoryName);
       await removeCategoryService(categoryName);
-      
-      // Recarregar categorias após remover
-      const updatedCategories = await getUserCategories();
-      setCategories(updatedCategories);
-      console.log('Categorias atualizadas após remover:', updatedCategories);
+      await reloadCategories(); // Recarregar após remover
+      console.log('Categoria removida e lista recarregada');
     } catch (err) {
       console.error('Erro ao remover categoria:', err);
       throw err;
