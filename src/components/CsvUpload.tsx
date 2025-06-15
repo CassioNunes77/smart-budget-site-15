@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -202,15 +201,15 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
-        <div className="space-y-1">
-          <Label htmlFor="csv-upload" className="text-sm">Selecionar arquivo CSV</Label>
+        <div className="flex items-center gap-3">
+          <Label htmlFor="csv-upload" className="text-sm whitespace-nowrap">Selecionar arquivo CSV</Label>
           <Input
             id="csv-upload"
             type="file"
             accept=".csv"
             onChange={handleFileUpload}
             disabled={isProcessing}
-            className="cursor-pointer h-9"
+            className="cursor-pointer h-9 flex-1"
           />
         </div>
 
