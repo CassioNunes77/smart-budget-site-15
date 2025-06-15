@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,13 +27,13 @@ interface Transaction {
 
 const Index: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState('dashboard');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  const { user, loading: authLoading } = useFirebaseAuth();
+  const { user, loading: authLoading, logout } = useFirebaseAuth();
   const { 
     transactions, 
     loading, 
@@ -144,6 +145,14 @@ const Index: React.FC = () => {
     });
   };
 
+  const handleUpdateUser = (userData: { name: string; email: string }) => {
+    console.log('Update user:', userData);
+    toast({
+      title: "Perfil atualizado!",
+      description: "Suas informações foram salvas com sucesso.",
+    });
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -156,8 +165,10 @@ const Index: React.FC = () => {
     return (
       <>
         <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
+          onLogin={(user) => {
+            console.log('User logged in:', user);
+            setIsAuthModalOpen(false);
+          }}
         />
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
           <div className="text-center space-y-4 p-8">
@@ -172,37 +183,67 @@ const Index: React.FC = () => {
     );
   }
 
+  if (currentPage === 'profile') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+        <div className="flex">
+          <Sidebar 
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onLogout={logout}
+            userName={user?.displayName || user?.email || 'Usuário'}
+            userPhotoURL={user?.photoURL}
+            onShowPremiumModal={() => setIsPremiumModalOpen(true)}
+          />
+          
+          <div className="flex-1 p-4 md:p-6 lg:p-8 lg:ml-64">
+            <div className="max-w-4xl mx-auto">
+              <UserProfile 
+                user={user ? {
+                  id: user.uid,
+                  name: user.displayName || user.email || 'Usuário',
+                  email: user.email || ''
+                } : null}
+                onUpdateUser={handleUpdateUser}
+                onShowPremiumModal={() => setIsPremiumModalOpen(true)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <PremiumModal
+          isOpen={isPremiumModalOpen}
+          onClose={() => setIsPremiumModalOpen(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       <div className="flex">
         <Sidebar 
-          isOpen={isSidebarOpen} 
-          onClose={() => setIsSidebarOpen(false)}
-          onOpenPremium={() => setIsPremiumModalOpen(true)}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onLogout={logout}
+          userName={user?.displayName || user?.email || 'Usuário'}
+          userPhotoURL={user?.photoURL}
+          onShowPremiumModal={() => setIsPremiumModalOpen(true)}
         />
         
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8 lg:ml-64">
           <div className="max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="md:hidden"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Sistema Financeiro</h1>
-                  <p className="text-sm text-green-600 font-medium">
+                  <p className="text-sm font-medium" style={{ color: '#4CAF50' }}>
                     Olá, {user?.displayName || user?.email}! 💰 Seu futuro financeiro começa agora – e vai ser incrível!
                   </p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3">
-                <UserProfile />
                 <Button
                   onClick={() => setIsModalOpen(true)}
                   className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg"
@@ -276,21 +317,26 @@ const Index: React.FC = () => {
         </div>
       </div>
 
-      <TransactionModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingTransaction(null);
-        }}
-        onSubmit={editingTransaction ? handleEditTransaction : handleAddTransaction}
-        editingTransaction={editingTransaction}
-        categories={categories}
-      />
+      {isModalOpen && (
+        <TransactionModal
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingTransaction(null);
+          }}
+          onSubmit={editingTransaction ? handleEditTransaction : handleAddTransaction}
+          editingTransaction={editingTransaction}
+          categories={categories}
+        />
+      )}
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-      />
+      {isAuthModalOpen && (
+        <AuthModal 
+          onLogin={(user) => {
+            console.log('User logged in:', user);
+            setIsAuthModalOpen(false);
+          }}
+        />
+      )}
 
       <PremiumModal
         isOpen={isPremiumModalOpen}
