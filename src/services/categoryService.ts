@@ -1,3 +1,4 @@
+
 import firestoreService from './firestoreService';
 import { auth } from './firebase';
 import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
@@ -6,14 +7,24 @@ export interface Category {
   id: string;
   name: string;
   userId: string;
+  icon?: string;
+  color?: string;
+  isBase?: boolean;
 }
 
 // Buscar categorias do usuário
-export const getUserCategories = async (): Promise<string[]> => {
+export const getUserCategories = async (): Promise<Category[]> => {
   const user = auth.currentUser;
   if (!user) {
     console.log('Usuário não autenticado, retornando categorias padrão');
-    return DEFAULT_CATEGORIES.map(cat => cat.name);
+    return DEFAULT_CATEGORIES.map((cat, index) => ({
+      id: `default-${index}`,
+      name: cat.name,
+      userId: '',
+      icon: cat.icon.name,
+      color: cat.color,
+      isBase: true
+    }));
   }
 
   try {
@@ -30,9 +41,15 @@ export const getUserCategories = async (): Promise<string[]> => {
     // Se não há categorias no Firestore, criar as categorias padrão para este usuário
     if (categories.length === 0) {
       console.log('Nenhuma categoria encontrada, criando categorias padrão para o usuário');
-      const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
-      await initializeDefaultCategories(defaultCategoryNames);
-      return defaultCategoryNames;
+      await initializeDefaultCategories();
+      const newCategories = await firestoreService.listDocuments(
+        'categories', 
+        [['userId', '==', user.uid]]
+      );
+      return newCategories.map(cat => ({
+        ...cat,
+        isBase: DEFAULT_CATEGORIES.some(def => def.name === cat.name)
+      }));
     }
     
     // Verificar se todas as categorias base estão presentes
@@ -44,9 +61,13 @@ export const getUserCategories = async (): Promise<string[]> => {
     if (missingCategories.length > 0) {
       console.log('Categorias base faltando, adicionando:', missingCategories);
       for (const categoryName of missingCategories) {
+        const defaultCategory = DEFAULT_CATEGORIES.find(cat => cat.name === categoryName);
         await firestoreService.saveDocument('categories', {
           name: categoryName,
-          userId: user.uid
+          userId: user.uid,
+          icon: defaultCategory?.icon.name || 'Tag',
+          color: defaultCategory?.color || 'text-slate-600',
+          isBase: true
         });
       }
       // Recarregar categorias após adicionar as faltantes
@@ -54,32 +75,48 @@ export const getUserCategories = async (): Promise<string[]> => {
         'categories', 
         [['userId', '==', user.uid]]
       );
-      return updatedCategories.map(cat => cat.name).sort();
+      return updatedCategories.map(cat => ({
+        ...cat,
+        isBase: DEFAULT_CATEGORIES.some(def => def.name === cat.name)
+      }));
     }
     
-    console.log(`${categoryNames.length} categorias processadas:`, categoryNames);
-    return categoryNames.sort();
+    console.log(`${categories.length} categorias processadas`);
+    return categories.map(cat => ({
+      ...cat,
+      isBase: DEFAULT_CATEGORIES.some(def => def.name === cat.name)
+    }));
   } catch (error) {
     console.error('Erro ao buscar categorias:', error);
     // Em caso de erro, retornar categorias padrão
-    return DEFAULT_CATEGORIES.map(cat => cat.name);
+    return DEFAULT_CATEGORIES.map((cat, index) => ({
+      id: `default-${index}`,
+      name: cat.name,
+      userId: '',
+      icon: cat.icon.name,
+      color: cat.color,
+      isBase: true
+    }));
   }
 };
 
 // Inicializar categorias padrão para um usuário
-const initializeDefaultCategories = async (categories: string[]): Promise<void> => {
+const initializeDefaultCategories = async (): Promise<void> => {
   const user = auth.currentUser;
   if (!user) throw new Error("Usuário não autenticado");
 
   console.log('Inicializando categorias padrão para usuário:', user.uid);
 
   try {
-    for (const categoryName of categories) {
+    for (const defaultCategory of DEFAULT_CATEGORIES) {
       await firestoreService.saveDocument('categories', {
-        name: categoryName,
-        userId: user.uid
+        name: defaultCategory.name,
+        userId: user.uid,
+        icon: defaultCategory.icon.name,
+        color: defaultCategory.color,
+        isBase: true
       });
-      console.log('Categoria base criada:', categoryName);
+      console.log('Categoria base criada:', defaultCategory.name);
     }
   } catch (error) {
     console.error('Erro ao inicializar categorias padrão:', error);
@@ -87,62 +124,40 @@ const initializeDefaultCategories = async (categories: string[]): Promise<void> 
   }
 };
 
-// Salvar categorias do usuário
-export const saveUserCategories = async (categories: string[]): Promise<void> => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Usuário não autenticado");
-
-  console.log('Salvando categorias:', categories);
-
-  try {
-    // Primeiro, buscar categorias existentes para identificar quais remover
-    const existingCategories = await firestoreService.listDocuments(
-      'categories',
-      [['userId', '==', user.uid]]
-    );
-
-    // Remover categorias que não estão mais na lista
-    for (const existingCategory of existingCategories) {
-      if (!categories.includes(existingCategory.name)) {
-        await firestoreService.deleteDocument('categories', existingCategory.id);
-        console.log('Categoria removida:', existingCategory.name);
-      }
-    }
-
-    // Adicionar ou manter categorias
-    for (const categoryName of categories) {
-      const existingCategory = existingCategories.find(cat => cat.name === categoryName);
-      
-      if (!existingCategory) {
-        // Criar nova categoria
-        const docId = await firestoreService.saveDocument('categories', {
-          name: categoryName,
-          userId: user.uid
-        });
-        console.log('Nova categoria criada:', categoryName, 'com ID:', docId);
-      }
-    }
-  } catch (error) {
-    console.error('Erro ao salvar categorias:', error);
-    throw error;
-  }
-};
-
 // Adicionar nova categoria
-export const addCategory = async (categoryName: string): Promise<void> => {
+export const addCategory = async (categoryName: string, icon?: string, color?: string): Promise<void> => {
   const user = auth.currentUser;
   if (!user) throw new Error("Usuário não autenticado");
 
-  console.log('Adicionando categoria:', categoryName);
+  console.log('Adicionando categoria:', categoryName, 'com ícone:', icon, 'e cor:', color);
 
   try {
     const docId = await firestoreService.saveDocument('categories', {
       name: categoryName,
-      userId: user.uid
+      userId: user.uid,
+      icon: icon || 'Tag',
+      color: color || '#64748b',
+      isBase: false
     });
     console.log('Categoria adicionada com sucesso:', categoryName, 'ID:', docId);
   } catch (error) {
     console.error('Erro ao adicionar categoria:', error);
+    throw error;
+  }
+};
+
+// Atualizar categoria existente
+export const updateCategory = async (categoryId: string, updates: Partial<Category>): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Usuário não autenticado");
+
+  console.log('Atualizando categoria:', categoryId, 'com dados:', updates);
+
+  try {
+    await firestoreService.updateDocument('categories', categoryId, updates);
+    console.log('Categoria atualizada com sucesso:', categoryId);
+  } catch (error) {
+    console.error('Erro ao atualizar categoria:', error);
     throw error;
   }
 };
