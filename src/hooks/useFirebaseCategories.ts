@@ -1,15 +1,18 @@
+
 import { useState, useEffect } from 'react';
 import { 
   getUserCategories,
-  saveUserCategories,
   addCategory as addCategoryService,
-  removeCategory as removeCategoryService
+  removeCategory as removeCategoryService,
+  updateCategory as updateCategoryService,
+  getCategoryNames,
+  Category
 } from '@/services/categoryService';
 import { useFirebaseAuth } from './useFirebaseAuth';
-import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
 
 export const useFirebaseCategories = () => {
   const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesData, setCategoriesData] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useFirebaseAuth();
@@ -17,29 +20,23 @@ export const useFirebaseCategories = () => {
   // Carregar categorias quando o usuário estiver autenticado
   useEffect(() => {
     const loadCategories = async () => {
-      if (!user) {
-        console.log('Usuário não autenticado, usando categorias padrão');
-        const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
-        setCategories(defaultCategoryNames);
-        setLoading(false);
-        return;
-      }
-
       setLoading(true);
       setError(null);
 
       try {
-        console.log('Carregando categorias do Firestore para usuário:', user.uid);
+        console.log('Carregando categorias...');
         const data = await getUserCategories();
-        console.log('Categorias carregadas do Firebase:', data);
-        setCategories(data);
+        console.log('Categorias carregadas:', data);
+        
+        setCategoriesData(data);
+        setCategories(getCategoryNames(data));
+        
         console.log(`${data.length} categorias carregadas com sucesso`);
       } catch (err) {
         console.error('Erro ao carregar categorias:', err);
         setError('Erro ao carregar categorias');
-        // Fallback para categorias padrão em caso de erro
-        const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
-        setCategories(defaultCategoryNames);
+        setCategoriesData([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -50,37 +47,37 @@ export const useFirebaseCategories = () => {
 
   // Recarregar categorias
   const reloadCategories = async () => {
-    if (!user) return;
-    
     try {
       const data = await getUserCategories();
-      setCategories(data);
+      setCategoriesData(data);
+      setCategories(getCategoryNames(data));
     } catch (err) {
       console.error('Erro ao recarregar categorias:', err);
     }
   };
 
-  // Salvar todas as categorias
-  const updateCategories = async (newCategories: string[]) => {
+  // Adicionar categoria com ícone e cor
+  const addCategory = async (categoryName: string, icon: string = 'Tag', color: string = '#64748b') => {
     try {
-      console.log('Atualizando categorias:', newCategories);
-      await saveUserCategories(newCategories);
-      setCategories(newCategories);
+      console.log('Adicionando categoria:', { categoryName, icon, color });
+      await addCategoryService(categoryName, icon, color);
+      await reloadCategories();
+      console.log('Categoria adicionada e lista recarregada');
     } catch (err) {
-      console.error('Erro ao atualizar categorias:', err);
+      console.error('Erro ao adicionar categoria:', err);
       throw err;
     }
   };
 
-  // Adicionar categoria
-  const addCategory = async (categoryName: string) => {
+  // Atualizar categoria
+  const updateCategory = async (categoryId: string, updates: Partial<Category>) => {
     try {
-      console.log('Adicionando categoria:', categoryName);
-      await addCategoryService(categoryName);
-      await reloadCategories(); // Recarregar após adicionar
-      console.log('Categoria adicionada e lista recarregada');
+      console.log('Atualizando categoria:', categoryId, updates);
+      await updateCategoryService(categoryId, updates);
+      await reloadCategories();
+      console.log('Categoria atualizada e lista recarregada');
     } catch (err) {
-      console.error('Erro ao adicionar categoria:', err);
+      console.error('Erro ao atualizar categoria:', err);
       throw err;
     }
   };
@@ -90,7 +87,7 @@ export const useFirebaseCategories = () => {
     try {
       console.log('Removendo categoria:', categoryName);
       await removeCategoryService(categoryName);
-      await reloadCategories(); // Recarregar após remover
+      await reloadCategories();
       console.log('Categoria removida e lista recarregada');
     } catch (err) {
       console.error('Erro ao remover categoria:', err);
@@ -98,12 +95,20 @@ export const useFirebaseCategories = () => {
     }
   };
 
+  // Obter dados completos de uma categoria pelo nome
+  const getCategoryData = (categoryName: string): Category | undefined => {
+    return categoriesData.find(cat => cat.name === categoryName);
+  };
+
   return {
     categories,
+    categoriesData,
     loading,
     error,
-    updateCategories,
     addCategory,
-    removeCategory
+    updateCategory,
+    removeCategory,
+    getCategoryData,
+    reloadCategories
   };
 };
