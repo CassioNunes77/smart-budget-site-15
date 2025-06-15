@@ -36,27 +36,9 @@ export const DEFAULT_CATEGORIES: CategoryConfig[] = [
 interface CategoryIconProps {
   categoryName: string;
   className?: string;
-  customIcon?: string;
-  customColor?: string;
 }
 
-const CategoryIcon: React.FC<CategoryIconProps> = ({ 
-  categoryName, 
-  className = "w-4 h-4", 
-  customIcon,
-  customColor 
-}) => {
-  // Se tem ícone customizado, usar ele
-  if (customIcon && customColor) {
-    const iconMap: { [key: string]: React.ComponentType<any> } = {
-      Tag, DollarSign, Briefcase, CreditCard, Home, Utensils, Car, Heart, Gamepad2, MoreHorizontal
-    };
-    
-    const IconComponent = iconMap[customIcon] || Tag;
-    return <IconComponent className={`${className} ${customColor}`} />;
-  }
-
-  // Senão, usar configuração padrão
+const CategoryIcon: React.FC<CategoryIconProps> = ({ categoryName, className = "w-4 h-4" }) => {
   const categoryConfig = DEFAULT_CATEGORIES.find(cat => cat.name === categoryName);
   
   if (!categoryConfig) {

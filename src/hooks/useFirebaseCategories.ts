@@ -1,17 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { 
   getUserCategories,
+  saveUserCategories,
   addCategory as addCategoryService,
-  removeCategory as removeCategoryService,
-  updateCategory as updateCategoryService,
-  Category
+  removeCategory as removeCategoryService
 } from '@/services/categoryService';
 import { useFirebaseAuth } from './useFirebaseAuth';
 import { DEFAULT_CATEGORIES } from '@/components/CategoryIcon';
 
 export const useFirebaseCategories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useFirebaseAuth();
@@ -21,15 +19,8 @@ export const useFirebaseCategories = () => {
     const loadCategories = async () => {
       if (!user) {
         console.log('Usuário não autenticado, usando categorias padrão');
-        const defaultCategories = DEFAULT_CATEGORIES.map((cat, index) => ({
-          id: `default-${index}`,
-          name: cat.name,
-          userId: '',
-          icon: cat.icon.name,
-          color: cat.color,
-          isBase: true
-        }));
-        setCategories(defaultCategories);
+        const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
+        setCategories(defaultCategoryNames);
         setLoading(false);
         return;
       }
@@ -47,15 +38,8 @@ export const useFirebaseCategories = () => {
         console.error('Erro ao carregar categorias:', err);
         setError('Erro ao carregar categorias');
         // Fallback para categorias padrão em caso de erro
-        const defaultCategories = DEFAULT_CATEGORIES.map((cat, index) => ({
-          id: `default-${index}`,
-          name: cat.name,
-          userId: '',
-          icon: cat.icon.name,
-          color: cat.color,
-          isBase: true
-        }));
-        setCategories(defaultCategories);
+        const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
+        setCategories(defaultCategoryNames);
       } finally {
         setLoading(false);
       }
@@ -76,28 +60,27 @@ export const useFirebaseCategories = () => {
     }
   };
 
-  // Adicionar categoria
-  const addCategory = async (categoryName: string, icon?: string, color?: string) => {
+  // Salvar todas as categorias
+  const updateCategories = async (newCategories: string[]) => {
     try {
-      console.log('Adicionando categoria:', categoryName, 'ícone:', icon, 'cor:', color);
-      await addCategoryService(categoryName, icon, color);
-      await reloadCategories(); // Recarregar após adicionar
-      console.log('Categoria adicionada e lista recarregada');
+      console.log('Atualizando categorias:', newCategories);
+      await saveUserCategories(newCategories);
+      setCategories(newCategories);
     } catch (err) {
-      console.error('Erro ao adicionar categoria:', err);
+      console.error('Erro ao atualizar categorias:', err);
       throw err;
     }
   };
 
-  // Atualizar categoria
-  const updateCategory = async (categoryId: string, updates: Partial<Category>) => {
+  // Adicionar categoria
+  const addCategory = async (categoryName: string) => {
     try {
-      console.log('Atualizando categoria:', categoryId, 'com:', updates);
-      await updateCategoryService(categoryId, updates);
-      await reloadCategories(); // Recarregar após atualizar
-      console.log('Categoria atualizada e lista recarregada');
+      console.log('Adicionando categoria:', categoryName);
+      await addCategoryService(categoryName);
+      await reloadCategories(); // Recarregar após adicionar
+      console.log('Categoria adicionada e lista recarregada');
     } catch (err) {
-      console.error('Erro ao atualizar categoria:', err);
+      console.error('Erro ao adicionar categoria:', err);
       throw err;
     }
   };
@@ -119,8 +102,8 @@ export const useFirebaseCategories = () => {
     categories,
     loading,
     error,
+    updateCategories,
     addCategory,
-    updateCategory,
     removeCategory
   };
 };
