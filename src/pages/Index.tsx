@@ -23,6 +23,7 @@ import { useFirebaseCategories } from '@/hooks/useFirebaseCategories';
 import { migrateLocalData } from '@/services/migrationService';
 import CsvUpload from '@/components/CsvUpload';
 import DashboardPeriodFilter, { PeriodType } from '@/components/DashboardPeriodFilter';
+import MonthlySummary from '@/components/MonthlySummary';
 
 interface Transaction {
   id: string;
@@ -103,6 +104,9 @@ const Dashboard: React.FC = () => {
   // Estado do filtro de período do Dashboard
   const [dashboardPeriod, setDashboardPeriod] = useState<PeriodType>('month');
   const [dashboardYear, setDashboardYear] = useState<number>(new Date().getFullYear());
+  
+  // Estado para navegação mensal na tela de transações
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   
   // Ref para controlar se já mostrou o toast de login
   const hasShownLoginToast = useRef(false);
@@ -534,7 +538,7 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                  {getGreeting()}, {user?.name}! 👋
+                  Olá, {user?.name}! 💰 Seu futuro financeiro começa agora – e vai ser incrível!
                 </h1>
                 <p className="text-muted-foreground mt-1">Aqui está um resumo das suas finanças</p>
               </div>
@@ -717,6 +721,13 @@ const Dashboard: React.FC = () => {
                 Nova Transação
               </Button>
             </div>
+
+            <MonthlySummary
+              transactions={transactions}
+              currentMonth={selectedMonth}
+              onMonthChange={setSelectedMonth}
+              currency={currency}
+            />
 
             <Card className="shadow-lg">
               <CardHeader>
