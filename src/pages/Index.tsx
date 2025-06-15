@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,9 +79,9 @@ const Index = () => {
     }
   };
 
-  const handleUpdateTransaction = async (id, updates) => {
+  const handleUpdateTransaction = async (transactionData) => {
     try {
-      await updateTransaction(id, updates);
+      await updateTransaction(transactionData.id, transactionData);
       setShowTransactionModal(false);
       setTransactionToEdit(null);
       console.log('Transação atualizada com sucesso!');
@@ -158,7 +159,6 @@ const Index = () => {
 
         <TransactionsList 
           transactions={monthlyTransactions}
-          currentMonth={currentMonth}
           onEdit={handleEditTransaction}
           onDelete={handleDeleteTransaction}
           onUpdateStatus={handleUpdateTransactionStatus}
@@ -196,3 +196,4 @@ const Index = () => {
 };
 
 export default Index;
+
