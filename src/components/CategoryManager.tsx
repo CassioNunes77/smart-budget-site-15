@@ -156,7 +156,7 @@ const colorOptions = [
 ];
 
 const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) => {
-  const { categories: firebaseCategories, loading, addCategory, removeCategory, updateCategories, error } = useFirebaseCategories();
+  const { categoriesWithDetails, loading, addCategory, removeCategory, updateCategory, error } = useFirebaseCategories();
   const [categoryList, setCategoryList] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -167,44 +167,36 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
 
   // Carregar e formatar categorias
   useEffect(() => {
-    if (!loading && firebaseCategories.length > 0) {
-      console.log('Categorias do Firebase:', firebaseCategories);
+    if (!loading && categoriesWithDetails.length > 0) {
+      console.log('Categorias do Firebase:', categoriesWithDetails);
       
-      // Converter categorias do Firebase para formato Category
-      const formattedCategories: Category[] = firebaseCategories
-        .filter(cat => cat !== 'Sem categoria') // Excluir "Sem categoria" da exibição
-        .map((categoryName, index) => {
-          // Verificar se é uma categoria base
-          const defaultCategory = DEFAULT_CATEGORIES.find(def => def.name === categoryName);
+      const formattedCategories: Category[] = categoriesWithDetails
+        .filter(cat => cat.name !== 'Sem categoria')
+        .map((category, index) => {
+          const defaultCategory = DEFAULT_CATEGORIES.find(def => def.name === category.name);
           
-          if (defaultCategory) {
-            return getDefaultCategoryFormat(defaultCategory, index);
-          } else {
-            // Categoria personalizada
-            return {
-              id: `custom-${index}`,
-              name: categoryName,
-              icon: 'Tag',
-              color: colorOptions[index % colorOptions.length],
-              isBase: false
-            };
-          }
+          return {
+            id: category.id,
+            name: category.name,
+            icon: category.icon || (defaultCategory ? defaultCategory.icon.name : 'Tag'),
+            color: category.color || colorOptions[index % colorOptions.length],
+            isBase: !!defaultCategory
+          };
         });
       
       setCategoryList(formattedCategories);
     }
-  }, [firebaseCategories, loading]);
+  }, [categoriesWithDetails, loading]);
 
   const handleSaveCategory = async (category: Category) => {
     try {
       console.log('Salvando categoria:', category);
       
-      // Para qualquer modificação de categoria, apenas atualizar localmente
-      // As modificações só afetam a conta do usuário atual
-      const updatedCategories = categoryList.map(cat => 
-        cat.id === category.id ? category : cat
-      );
-      setCategoryList(updatedCategories);
+      await updateCategory(category.id, {
+        name: category.name,
+        icon: category.icon,
+        color: category.color
+      });
       
       toast({
         title: "Categoria personalizada!",
@@ -258,7 +250,6 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
   };
 
   const handleAddCategory = async () => {
-    // Validação básica
     if (!newCategoryName.trim()) {
       toast({
         title: "Nome obrigatório",
@@ -269,10 +260,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
     }
 
     const trimmedName = newCategoryName.trim();
-
-    // Verificar se a categoria já existe (incluindo verificação case-insensitive)
-    const categoryExists = firebaseCategories.some(cat => 
-      cat.toLowerCase() === trimmedName.toLowerCase()
+    const categoryExists = categoriesWithDetails.some(cat => 
+      cat.name.toLowerCase() === trimmedName.toLowerCase()
     );
 
     if (categoryExists) {
@@ -287,12 +276,10 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
     setIsCreating(true);
 
     try {
-      console.log('Tentando adicionar nova categoria:', trimmedName);
+      console.log('Tentando adicionar nova categoria:', trimmedName, newCategoryIcon, newCategoryColor);
       
-      // Tentar adicionar categoria via Firebase
-      await addCategory(trimmedName);
+      await addCategory(trimmedName, newCategoryIcon, newCategoryColor);
       
-      // Limpar formulário apenas em caso de sucesso
       setNewCategoryName('');
       setNewCategoryIcon('Tag');
       setNewCategoryColor(colorOptions[0]);
@@ -310,7 +297,6 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryDeleted }) 
       
       let errorMessage = "Não foi possível criar a categoria. Tente novamente.";
       
-      // Verificar tipos específicos de erro
       if (error.message) {
         errorMessage = error.message;
       } else if (error.code) {
