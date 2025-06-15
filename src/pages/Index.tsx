@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -551,7 +550,7 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-emerald-600">
-                  Olá, {user?.name}! 💰 Seu futuro financeiro começa agora – e vai ser incrível!
+                  Olá, {user?.name}! 💰
                 </h1>
                 <p className="text-muted-foreground mt-1">Aqui está um resumo das suas finanças</p>
               </div>
