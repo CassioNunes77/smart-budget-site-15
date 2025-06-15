@@ -44,7 +44,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ onClose }) => {
             Desbloqueie todo o potencial do seu controle financeiro
           </DialogDescription>
           <div className="text-sm text-muted-foreground mt-1">
-            Versão 0.3.3 Beta
+            Versão 0.3.4 Beta
           </div>
         </DialogHeader>
 

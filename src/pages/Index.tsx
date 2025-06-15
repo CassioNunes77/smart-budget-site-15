@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -231,7 +232,19 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Função para filtrar transações por mês selecionado (apenas para tela de transações)
+  const getMonthlyTransactions = () => {
+    const monthStart = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+    const monthEnd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
+    
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate >= monthStart && transactionDate <= monthEnd;
+    });
+  };
+
   const filteredTransactions = getFilteredTransactions();
+  const monthlyTransactions = getMonthlyTransactions();
 
   // Calcular totais separando por status usando transações filtradas
   const getFinancialSummary = () => {
@@ -537,7 +550,7 @@ const Dashboard: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                <h1 className="text-xl md:text-2xl font-bold text-emerald-600">
                   Olá, {user?.name}! 💰 Seu futuro financeiro começa agora – e vai ser incrível!
                 </h1>
                 <p className="text-muted-foreground mt-1">Aqui está um resumo das suas finanças</p>
@@ -730,12 +743,9 @@ const Dashboard: React.FC = () => {
             />
 
             <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>Todas as Transações</CardTitle>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 <TransactionsList 
-                  transactions={transactions}
+                  transactions={monthlyTransactions}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
