@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,11 +46,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser, onShowPre
   };
 
   const handleShareApp = () => {
-    const shareText = `Conheça o Fluxo Fácil - o melhor app para controle financeiro pessoal! 💰📱`;
+    const shareText = `Conheça o PINEE - o melhor app para controle financeiro pessoal! 💰📱`;
     
     if (navigator.share) {
       navigator.share({
-        title: 'Fluxo Fácil',
+        title: 'PINEE',
         text: shareText,
         url: window.location.origin
       });
@@ -108,8 +107,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser, onShowPre
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary">
+            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center">
+              <span className="text-2xl font-bold text-green-600">
                 {user?.name.charAt(0).toUpperCase()}
               </span>
             </div>
@@ -175,11 +174,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser, onShowPre
       </Card>
 
       {/* Versão Premium */}
-      <Card className="shadow-lg border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+      <Card className="shadow-lg border-green-500/20 bg-gradient-to-r from-green-500/5 to-emerald-500/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-primary">
+          <CardTitle className="flex items-center gap-2 text-green-600">
             <Crown className="w-5 h-5" />
-            Fluxo Fácil Premium
+            PINEE Premium
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -189,24 +188,24 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser, onShowPre
             </p>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 <span>Transações ilimitadas</span>
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 <span>Relatórios avançados</span>
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 <span>Sincronização na nuvem</span>
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 <span>Suporte prioritário</span>
               </li>
             </ul>
             <Button 
-              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
               onClick={onShowPremiumModal}
             >
               <Crown className="w-4 h-4 mr-2" />
@@ -221,12 +220,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUser, onShowPre
         <Card className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={handleShareApp}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Share2 className="w-5 h-5 text-primary" />
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Share2 className="w-5 h-5 text-green-600" />
               </div>
               <div>
                 <h3 className="font-medium text-foreground">Indique para um amigo</h3>
-                <p className="text-sm text-muted-foreground">Compartilhe o Fluxo Fácil</p>
+                <p className="text-sm text-muted-foreground">Compartilhe o PINEE</p>
               </div>
             </div>
           </CardContent>
