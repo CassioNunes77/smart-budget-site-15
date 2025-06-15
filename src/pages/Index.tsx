@@ -830,10 +830,7 @@ const Dashboard: React.FC = () => {
       case 'categories':
         return (
           <CategoryManager 
-            categories={categories} 
-            onUpdateCategories={handleUpdateCategories}
             onCategoryDeleted={handleCategoryDeleted}
-            userId={user?.id || 'default'}
           />
         );
 
