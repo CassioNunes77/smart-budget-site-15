@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,7 @@ const Index: React.FC = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  const { user, loading: authLoading, logout } = useFirebaseAuth();
+  const { user, loading: authLoading, handleLogout } = useFirebaseAuth();
   const { 
     transactions, 
     loading, 
@@ -164,12 +163,14 @@ const Index: React.FC = () => {
   if (!user) {
     return (
       <>
-        <AuthModal 
-          onLogin={(user) => {
-            console.log('User logged in:', user);
-            setIsAuthModalOpen(false);
-          }}
-        />
+        {isAuthModalOpen && (
+          <AuthModal 
+            onLogin={(user) => {
+              console.log('User logged in:', user);
+              setIsAuthModalOpen(false);
+            }}
+          />
+        )}
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
           <div className="text-center space-y-4 p-8">
             <h1 className="text-4xl font-bold">Sistema Financeiro</h1>
@@ -190,7 +191,7 @@ const Index: React.FC = () => {
           <Sidebar 
             currentPage={currentPage}
             onPageChange={setCurrentPage}
-            onLogout={logout}
+            onLogout={handleLogout}
             userName={user?.displayName || user?.email || 'Usuário'}
             userPhotoURL={user?.photoURL}
             onShowPremiumModal={() => setIsPremiumModalOpen(true)}
@@ -225,7 +226,7 @@ const Index: React.FC = () => {
         <Sidebar 
           currentPage={currentPage}
           onPageChange={setCurrentPage}
-          onLogout={logout}
+          onLogout={handleLogout}
           userName={user?.displayName || user?.email || 'Usuário'}
           userPhotoURL={user?.photoURL}
           onShowPremiumModal={() => setIsPremiumModalOpen(true)}
@@ -323,7 +324,7 @@ const Index: React.FC = () => {
             setIsModalOpen(false);
             setEditingTransaction(null);
           }}
-          onSubmit={editingTransaction ? handleEditTransaction : handleAddTransaction}
+          onSave={editingTransaction ? handleEditTransaction : handleAddTransaction}
           editingTransaction={editingTransaction}
           categories={categories}
         />
