@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export type PeriodType = 'week' | 'month' | 'quarter' | 'year' | 'all';
+export type PeriodType = 'year';
 
 interface DashboardPeriodFilterProps {
   selectedPeriod: PeriodType;
@@ -17,59 +18,37 @@ const DashboardPeriodFilter: React.FC<DashboardPeriodFilterProps> = ({
   onPeriodChange
 }) => {
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const displayYear = selectedYear || currentYear;
 
-  const getCurrentMonthName = () => {
-    return new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  };
-
-  const getPeriodLabel = () => {
-    switch (selectedPeriod) {
-      case 'week':
-        return 'Semanal';
-      case 'month':
-        return getCurrentMonthName();
-      case 'quarter':
-        return 'Trimestral';
-      case 'year':
-        return `Anual ${selectedYear || currentYear}`;
-      case 'all':
-        return 'Todo o Período';
-      default:
-        return getCurrentMonthName();
-    }
-  };
-
-  const handlePeriodChange = (value: string) => {
-    if (value.startsWith('year-')) {
-      const year = parseInt(value.split('-')[1]);
-      onPeriodChange('year', year);
-    } else {
-      onPeriodChange(value as PeriodType);
-    }
+  const handleYearChange = (direction: 'prev' | 'next') => {
+    const newYear = direction === 'prev' ? displayYear - 1 : displayYear + 1;
+    onPeriodChange('year', newYear);
   };
 
   return (
     <div className="flex items-center gap-2">
       <Calendar className="w-4 h-4 text-muted-foreground" />
-      <Select value={selectedPeriod === 'year' ? `year-${selectedYear}` : selectedPeriod} onValueChange={handlePeriodChange}>
-        <SelectTrigger className="w-auto min-w-[160px] h-9 border-input bg-background">
-          <SelectValue>
-            <span className="text-sm">{getPeriodLabel()}</span>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent align="end">
-          <SelectItem value="week">Semanal</SelectItem>
-          <SelectItem value="month">Mensal</SelectItem>
-          <SelectItem value="quarter">Trimestral</SelectItem>
-          {years.map(year => (
-            <SelectItem key={year} value={`year-${year}`}>
-              Anual {year}
-            </SelectItem>
-          ))}
-          <SelectItem value="all">Todo o Período</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-1 border rounded-md px-3 py-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleYearChange('prev')}
+          className="h-6 w-6 p-0"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className="text-sm font-medium min-w-[60px] text-center">
+          {displayYear}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleYearChange('next')}
+          className="h-6 w-6 p-0"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 };
