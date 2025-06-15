@@ -13,6 +13,7 @@ import Settings from '@/components/Settings';
 import UserProfile from '@/components/UserProfile';
 import CategoryManager from '@/components/CategoryManager';
 import PremiumModal from '@/components/PremiumModal';
+import CsvUpload from '@/components/CsvUpload';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
@@ -21,7 +22,6 @@ import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { useFirebaseTransactions } from '@/hooks/useFirebaseTransactions';
 import { useFirebaseCategories } from '@/hooks/useFirebaseCategories';
 import { migrateLocalData } from '@/services/migrationService';
-import CsvUpload from '@/components/CsvUpload';
 import DashboardPeriodFilter, { PeriodType } from '@/components/DashboardPeriodFilter';
 import MonthlySummary from '@/components/MonthlySummary';
 
@@ -443,18 +443,38 @@ const Dashboard: React.FC = () => {
 
   const handleImportTransactions = async (importedTransactions: Transaction[]) => {
     try {
+      let successCount = 0;
+      let errorCount = 0;
+
       for (const transaction of importedTransactions) {
-        await addFirebaseTransaction(transaction);
+        try {
+          await addFirebaseTransaction(transaction);
+          successCount++;
+        } catch (error) {
+          console.error('Erro ao importar transação individual:', error);
+          errorCount++;
+        }
       }
-      toast({
-        title: "Transações importadas!",
-        description: `${importedTransactions.length} transações foram adicionadas com sucesso.`,
-      });
+
+      if (successCount > 0) {
+        toast({
+          title: "Transações importadas!",
+          description: `${successCount} transações foram adicionadas com sucesso.${errorCount > 0 ? ` ${errorCount} falharam.` : ''}`,
+        });
+      }
+
+      if (errorCount > 0 && successCount === 0) {
+        toast({
+          title: "Erro na importação",
+          description: "Não foi possível importar as transações. Verifique o formato do arquivo.",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
-      console.error('Erro ao importar transações:', error);
+      console.error('Erro geral ao importar transações:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível importar todas as transações.",
+        description: "Erro inesperado durante a importação.",
         variant: "destructive"
       });
     }
@@ -741,6 +761,12 @@ const Dashboard: React.FC = () => {
               currency={currency}
             />
 
+            {/* Seção de Upload CSV */}
+            <CsvUpload 
+              onTransactionsImported={handleImportTransactions}
+              categories={categories}
+            />
+
             <Card className="shadow-lg">
               <CardContent className="p-6">
                 <TransactionsList 
@@ -750,8 +776,7 @@ const Dashboard: React.FC = () => {
                   onUpdateStatus={handleUpdateTransactionStatus}
                   showFilters={true}
                   categories={categories}
-                  showUpload={true}
-                  onUploadCSV={handleUploadCSV}
+                  showUpload={false}
                 />
               </CardContent>
             </Card>
