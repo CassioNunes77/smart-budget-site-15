@@ -162,7 +162,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     <div className="space-y-4">
       {showFilters && (
         <div className="space-y-4">
-          {/* Barra de Filtros Minimalista */}
+          {/* Barra de Filtros com Labels */}
           <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/30 rounded-lg">
             {/* Busca */}
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
@@ -175,60 +175,74 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
               />
             </div>
 
-            {/* Filtros */}
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="income">Receitas</SelectItem>
-                <SelectItem value="expense">Despesas</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Filtro de Tipo */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Tipo</Label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="income">Receitas</SelectItem>
+                  <SelectItem value="expense">Despesas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="confirmed">Confirmados</SelectItem>
-                <SelectItem value="pending">Pendentes</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Filtro de Status */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="confirmed">Confirmados</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filtro de Categoria */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Categoria</Label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             {showUpload && (
-              <div>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="csv-upload"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('csv-upload')?.click()}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  CSV
-                </Button>
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs text-muted-foreground">Importar</Label>
+                <div>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="csv-upload"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('csv-upload')?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    CSV
+                  </Button>
+                </div>
               </div>
             )}
           </div>
