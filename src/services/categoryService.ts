@@ -18,26 +18,33 @@ export const getUserCategories = async (): Promise<string[]> => {
   }
 
   try {
+    console.log('Buscando categorias para usuário:', user.uid);
+    
+    // Buscar apenas pelo userId, sem ordenação complexa para evitar problemas de índice
     const categories = await firestoreService.listDocuments(
       'categories', 
-      [['userId', '==', user.uid]],
-      'name',
-      'asc'
+      [['userId', '==', user.uid]]
     );
     
-    const categoryNames = categories.map(cat => cat.name);
+    console.log('Categorias encontradas no Firestore:', categories);
+    
+    // Ordenar por nome localmente
+    const sortedCategories = categories.sort((a, b) => a.name.localeCompare(b.name));
+    const categoryNames = sortedCategories.map(cat => cat.name);
     
     // Se não há categorias no Firestore, criar as categorias padrão
     if (categoryNames.length === 0) {
+      console.log('Nenhuma categoria encontrada, criando categorias padrão');
       const defaultCategoryNames = DEFAULT_CATEGORIES.map(cat => cat.name);
       await saveUserCategories(defaultCategoryNames);
       return defaultCategoryNames;
     }
     
-    console.log(`${categoryNames.length} categorias encontradas`);
+    console.log(`${categoryNames.length} categorias processadas:`, categoryNames);
     return categoryNames;
   } catch (error) {
     console.error('Erro ao buscar categorias:', error);
+    // Em caso de erro, retornar categorias padrão
     return DEFAULT_CATEGORIES.map(cat => cat.name);
   }
 };
@@ -60,6 +67,7 @@ export const saveUserCategories = async (categories: string[]): Promise<void> =>
     for (const existingCategory of existingCategories) {
       if (!categories.includes(existingCategory.name)) {
         await firestoreService.deleteDocument('categories', existingCategory.id);
+        console.log('Categoria removida:', existingCategory.name);
       }
     }
 
@@ -69,10 +77,11 @@ export const saveUserCategories = async (categories: string[]): Promise<void> =>
       
       if (!existingCategory) {
         // Criar nova categoria
-        await firestoreService.saveDocument('categories', {
+        const docId = await firestoreService.saveDocument('categories', {
           name: categoryName,
           userId: user.uid
         });
+        console.log('Nova categoria criada:', categoryName, 'com ID:', docId);
       }
     }
   } catch (error) {
@@ -88,10 +97,16 @@ export const addCategory = async (categoryName: string): Promise<void> => {
 
   console.log('Adicionando categoria:', categoryName);
 
-  await firestoreService.saveDocument('categories', {
-    name: categoryName,
-    userId: user.uid
-  });
+  try {
+    const docId = await firestoreService.saveDocument('categories', {
+      name: categoryName,
+      userId: user.uid
+    });
+    console.log('Categoria adicionada com sucesso:', categoryName, 'ID:', docId);
+  } catch (error) {
+    console.error('Erro ao adicionar categoria:', error);
+    throw error;
+  }
 };
 
 // Remover categoria
@@ -101,12 +116,18 @@ export const removeCategory = async (categoryName: string): Promise<void> => {
 
   console.log('Removendo categoria:', categoryName);
 
-  const categories = await firestoreService.listDocuments(
-    'categories',
-    [['userId', '==', user.uid], ['name', '==', categoryName]]
-  );
+  try {
+    const categories = await firestoreService.listDocuments(
+      'categories',
+      [['userId', '==', user.uid], ['name', '==', categoryName]]
+    );
 
-  for (const category of categories) {
-    await firestoreService.deleteDocument('categories', category.id);
+    for (const category of categories) {
+      await firestoreService.deleteDocument('categories', category.id);
+      console.log('Categoria removida do Firestore:', category.id);
+    }
+  } catch (error) {
+    console.error('Erro ao remover categoria:', error);
+    throw error;
   }
 };
