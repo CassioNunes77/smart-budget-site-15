@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -224,7 +223,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* Seção de Benefícios */}
-      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6">
+      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6 mb-8">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal direction="up" delay={200}>
             <div className="text-center mb-12 md:mb-16">
@@ -284,7 +283,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* Seção de Testimoniais */}
-      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6 bg-black/10 backdrop-blur-sm">
+      <section className="relative z-20 py-16 md:py-20 px-4 md:px-6 bg-black/20 backdrop-blur-sm mb-16">
         <ParallaxSection speed={0.3}>
           <div className="max-w-7xl mx-auto">
             <ScrollReveal direction="up" delay={200}>
@@ -306,10 +305,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* CTA Final */}
-      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6 mt-8">
+      <section className="relative z-30 py-16 md:py-20 px-4 md:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <ScrollReveal direction="up" delay={200}>
-            <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm p-8 md:p-12 rounded-3xl border border-green-300/30 shadow-2xl">
+            <div className="bg-gradient-to-r from-green-500/30 to-emerald-500/30 backdrop-blur-md p-8 md:p-12 rounded-3xl border border-green-300/40 shadow-2xl">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 md:mb-6">
                 Sua transformação financeira começa agora
               </h2>
