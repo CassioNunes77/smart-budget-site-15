@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { getCategoryChartColor } from '@/components/CategoryIcon';
 
 interface Transaction {
   id: string;
@@ -54,7 +54,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
   const { consolidated, pending } = getTransactionsByStatus();
 
-  // Dados para gráfico de receitas por categoria
+  // Dados para gráfico de receitas por categoria - com cores corretas
   const incomeByCategory = React.useMemo(() => {
     const categoryMap = new Map<string, number>();
     
@@ -67,11 +67,12 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
     return Array.from(categoryMap.entries()).map(([category, amount]) => ({
       name: category,
-      value: amount
+      value: amount,
+      color: getCategoryChartColor(category)
     }));
   }, [transactions]);
 
-  // Dados para gráfico de despesas por categoria
+  // Dados para gráfico de despesas por categoria - com cores corretas
   const expenseByCategory = React.useMemo(() => {
     const categoryMap = new Map<string, number>();
     
@@ -84,7 +85,8 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
 
     return Array.from(categoryMap.entries()).map(([category, amount]) => ({
       name: category,
-      value: amount
+      value: amount,
+      color: getCategoryChartColor(category)
     }));
   }, [transactions]);
 
@@ -287,7 +289,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
       {detailed && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Receitas por Categoria */}
+            {/* Receitas por Categoria - com cores das categorias */}
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Receitas por Categoria</CardTitle>
@@ -306,7 +308,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                       dataKey="value"
                     >
                       {incomeByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => formatCurrency(Number(value))} />
@@ -315,7 +317,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
               </CardContent>
             </Card>
 
-            {/* Despesas por Categoria */}
+            {/* Despesas por Categoria - com cores das categorias */}
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Despesas por Categoria</CardTitle>
@@ -334,7 +336,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, detaile
                       dataKey="value"
                     >
                       {expenseByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => formatCurrency(Number(value))} />

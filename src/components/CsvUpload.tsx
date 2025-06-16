@@ -48,18 +48,35 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
         return;
       }
 
-      // Processar cabeçalho com mais flexibilidade
-      const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, '').replace(/'/g, ''));
-      console.log('Cabeçalho detectado:', header);
+      // Função para normalizar texto (remover acentos e caracteres especiais)
+      const normalizeText = (text: string) => {
+        return text
+          .trim()
+          .toLowerCase()
+          .replace(/[áàâãä]/g, 'a')
+          .replace(/[éèêë]/g, 'e')
+          .replace(/[íìîï]/g, 'i')
+          .replace(/[óòôõö]/g, 'o')
+          .replace(/[úùûü]/g, 'u')
+          .replace(/[ç]/g, 'c')
+          .replace(/[ñ]/g, 'n')
+          .replace(/"/g, '')
+          .replace(/'/g, '')
+          .replace(/\s+/g, '_');
+      };
+
+      // Processar cabeçalho com normalização
+      const header = lines[0].split(',').map(h => normalizeText(h));
+      console.log('Cabeçalho normalizado:', header);
       
       const transactions: Transaction[] = [];
 
-      // Mapear colunas esperadas com mais variações
+      // Mapear colunas esperadas com variações normalizadas
       const expectedColumns = {
         date: ['data', 'date', 'dt', 'data_transacao', 'data_lancamento'],
         type: ['tipo', 'type', 'categoria_tipo', 'operacao', 'movimento'],
         amount: ['valor', 'amount', 'quantia', 'money', 'montante', 'preco'],
-        description: ['descricao', 'description', 'desc', 'descricão', 'historico', 'detalhes'],
+        description: ['descricao', 'description', 'desc', 'historico', 'detalhes'],
         category: ['categoria', 'category', 'cat', 'classificacao']
       };
 
@@ -191,65 +208,91 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Upload className="w-4 h-4" />
-          Importar CSV
+    <Card className="w-full max-w-2xl mx-auto shadow-sm border-green-100">
+      <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
+        <CardTitle className="flex items-center gap-3 text-lg text-green-700">
+          <div className="p-2 bg-green-100 rounded-lg">
+            <Upload className="w-5 h-5 text-green-600" />
+          </div>
+          Importar Transações via CSV
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                <div className="p-1 hover:bg-green-100 rounded-full transition-colors cursor-help">
+                  <Info className="w-4 h-4 text-green-600" />
+                </div>
               </TooltipTrigger>
-              <TooltipContent className="max-w-sm p-3">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Formato esperado do CSV:</h4>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
-                    <li><strong>Data:</strong> DD/MM/AAAA ou AAAA-MM-DD</li>
-                    <li><strong>Valor:</strong> Números com ponto ou vírgula decimal</li>
-                    <li><strong>Descrição:</strong> Texto descritivo da transação</li>
-                    <li><strong>Tipo:</strong> "receita/income/entrada" ou "despesa/expense/saída" (opcional)</li>
-                    <li><strong>Categoria:</strong> Nome da categoria existente (opcional)</li>
-                  </ul>
-                  <p className="text-xs font-medium">
-                    <strong>Exemplo:</strong> Data,Tipo,Valor,Descrição,Categoria
-                  </p>
+              <TooltipContent className="max-w-sm p-4 bg-white border border-green-200 shadow-lg">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-green-800 text-sm">Formato esperado do CSV:</h4>
+                  <div className="space-y-2 text-xs text-gray-700">
+                    <div><strong className="text-green-700">Data:</strong> DD/MM/AAAA ou AAAA-MM-DD</div>
+                    <div><strong className="text-green-700">Valor:</strong> Números com ponto ou vírgula decimal</div>
+                    <div><strong className="text-green-700">Descrição:</strong> Texto descritivo da transação</div>
+                    <div><strong className="text-green-700">Tipo:</strong> "receita/income/entrada" ou "despesa/expense/saída" (opcional)</div>
+                    <div><strong className="text-green-700">Categoria:</strong> Nome da categoria existente (opcional)</div>
+                  </div>
+                  <div className="bg-green-50 p-2 rounded text-xs">
+                    <strong className="text-green-800">Exemplo de cabeçalho:</strong><br />
+                    <code className="text-green-700">Data,Tipo,Valor,Descrição,Categoria</code>
+                  </div>
                 </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 pt-0">
-        <div className="flex items-center gap-3">
-          <Label htmlFor="csv-upload" className="text-sm whitespace-nowrap">Selecionar arquivo CSV</Label>
-          <Input
-            id="csv-upload"
-            type="file"
-            accept=".csv"
-            onChange={handleFileUpload}
-            disabled={isProcessing}
-            className="cursor-pointer h-9 flex-1"
-          />
+      
+      <CardContent className="p-6 space-y-4">
+        <div className="space-y-3">
+          <Label htmlFor="csv-upload" className="text-sm font-medium text-gray-700">
+            Selecionar arquivo CSV
+          </Label>
+          
+          <div className="relative">
+            <Input
+              id="csv-upload"
+              type="file"
+              accept=".csv"
+              onChange={handleFileUpload}
+              disabled={isProcessing}
+              className="hidden"
+            />
+            <Button
+              onClick={() => document.getElementById('csv-upload')?.click()}
+              disabled={isProcessing}
+              className="w-full h-12 border-2 border-dashed border-green-200 bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 transition-all duration-200"
+              variant="outline"
+            >
+              <Upload className="w-5 h-5 mr-3" />
+              {isProcessing ? 'Processando arquivo...' : 'Clique para selecionar arquivo CSV'}
+            </Button>
+          </div>
         </div>
 
         {isProcessing && (
-          <Alert className="py-2">
-            <FileText className="h-4 w-4" />
-            <AlertDescription className="text-sm">
+          <Alert className="border-blue-200 bg-blue-50">
+            <FileText className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700 font-medium">
               Processando arquivo CSV...
             </AlertDescription>
           </Alert>
         )}
 
         {result && (
-          <Alert className={`py-2 ${result.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+          <Alert className={`border-2 ${result.success 
+            ? 'border-green-200 bg-green-50' 
+            : 'border-red-200 bg-red-50'
+          }`}>
             {result.success ? (
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-green-600" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertCircle className="h-5 w-5 text-red-600" />
             )}
-            <AlertDescription className={`text-sm ${result.success ? 'text-green-700' : 'text-red-700'}`}>
+            <AlertDescription className={`font-medium ${result.success 
+              ? 'text-green-700' 
+              : 'text-red-700'
+            }`}>
               {result.message}
             </AlertDescription>
           </Alert>
