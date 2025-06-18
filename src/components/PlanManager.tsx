@@ -58,7 +58,6 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
   };
 
   const handleContactSubmit = async () => {
-    // Aqui você pode integrar com um serviço de email ou CRM
     console.log('Formulário de contato enviado:', contactForm);
     toast({
       title: "Solicitação enviada!",
@@ -110,7 +109,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
             <div className="flex items-center gap-3">
               <Badge className="bg-green-600 text-white">
                 {plan.accountType === 'free' ? 'Gratuito' : 
-                 plan.accountType === 'premium' ? 'Premium' : 
+                 plan.accountType === 'premium' ? 'PINEE Premium' : 
                  plan.accountType === 'enterprise' ? 'Licença Exclusiva' : 'Vitalício'}
               </Badge>
               <Badge variant={plan.paymentStatus === 'active' ? 'default' : 'destructive'}>
@@ -194,7 +193,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
           </div>
           
           <CardHeader className="text-center pt-6">
-            <CardTitle className="text-xl">Premium</CardTitle>
+            <CardTitle className="text-xl">PINEE Premium</CardTitle>
             <div className="space-y-1">
               <div className="text-3xl font-bold text-green-600">R$ 9,90</div>
               <div className="text-sm text-muted-foreground">/mês</div>
@@ -296,7 +295,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center">Assinar Premium</DialogTitle>
+            <DialogTitle className="text-center">Assinar PINEE Premium</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -319,6 +318,12 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
             <Button 
               className="w-full bg-green-600 hover:bg-green-700"
               onClick={() => {
+                // Aqui será integrado o sistema de pagamento
+                console.log('Iniciando processo de pagamento...');
+                toast({
+                  title: "Em breve!",
+                  description: "Sistema de pagamento será integrado em breve."
+                });
                 handleUpgrade('premium');
                 setShowPaymentModal(false);
               }}
