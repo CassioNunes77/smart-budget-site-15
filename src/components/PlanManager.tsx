@@ -31,6 +31,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
   const [upgrading, setUpgrading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [contactForm, setContactForm] = useState({
     company: '',
     users: '',
@@ -299,14 +300,20 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Card className="cursor-pointer hover:ring-2 hover:ring-green-500">
+              <Card 
+                className={`cursor-pointer hover:ring-2 hover:ring-green-500 ${selectedPlan === 'monthly' ? 'ring-2 ring-green-500' : ''}`}
+                onClick={() => setSelectedPlan('monthly')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-lg font-bold">R$ 9,90</div>
                   <div className="text-sm text-muted-foreground">Mensal</div>
                 </CardContent>
               </Card>
               
-              <Card className="cursor-pointer hover:ring-2 hover:ring-green-500 border-green-500 bg-green-50">
+              <Card 
+                className={`cursor-pointer hover:ring-2 hover:ring-green-500 border-green-500 bg-green-50 ${selectedPlan === 'yearly' ? 'ring-2 ring-green-500' : ''}`}
+                onClick={() => setSelectedPlan('yearly')}
+              >
                 <CardContent className="p-4 text-center">
                   <Badge className="bg-green-600 text-white text-xs mb-1">16% OFF</Badge>
                   <div className="text-lg font-bold">R$ 99,90</div>
@@ -318,8 +325,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ user }) => {
             <Button 
               className="w-full bg-green-600 hover:bg-green-700"
               onClick={() => {
-                // Aqui será integrado o sistema de pagamento
-                console.log('Iniciando processo de pagamento...');
+                console.log('Iniciando processo de pagamento...', { plano: selectedPlan });
                 toast({
                   title: "Em breve!",
                   description: "Sistema de pagamento será integrado em breve."
