@@ -12,7 +12,7 @@ import DownloadManager from '@/components/DownloadManager';
 import Settings from '@/components/Settings';
 import UserProfile from '@/components/UserProfile';
 import CategoryManager from '@/components/CategoryManager';
-import PremiumModal from '@/components/PremiumModal';
+import PremiumUpgradeModal from '@/components/PremiumUpgradeModal';
 import CsvUpload from '@/components/CsvUpload';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from '@/hooks/useTheme';
@@ -952,7 +952,10 @@ const Dashboard: React.FC = () => {
       )}
       
       {showPremiumModal && (
-        <PremiumModal onClose={() => setShowPremiumModal(false)} />
+        <PremiumUpgradeModal 
+          isOpen={showPremiumModal} 
+          onClose={() => setShowPremiumModal(false)} 
+        />
       )}
     </div>
   );
