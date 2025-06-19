@@ -1,13 +1,8 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Check, Crown, Star, Building, Users, Phone } from 'lucide-react';
+import { Check, Crown, Star, Zap, TrendingUp, Shield } from 'lucide-react';
 
 interface PremiumUpgradeModalProps {
   isOpen: boolean;
@@ -15,279 +10,201 @@ interface PremiumUpgradeModalProps {
 }
 
 const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClose }) => {
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showContactModal, setShowContactModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
-  const [contactForm, setContactForm] = useState({
-    company: '',
-    users: '',
-    phone: ''
-  });
-
-  const handlePremiumClick = () => {
-    setShowPaymentModal(true);
-  };
-
-  const handleExclusiveClick = () => {
-    setShowContactModal(true);
-  };
-
-  const handleContactSubmit = () => {
-    console.log('Formulário de contato enviado:', contactForm);
-    setContactForm({ company: '', users: '', phone: '' });
-    setShowContactModal(false);
-    onClose();
-  };
-
   return (
-    <>
-      <Dialog open={isOpen && !showPaymentModal && !showContactModal} onOpenChange={onClose}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center pb-6">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Crown className="w-6 h-6 text-yellow-500" />
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
               PINEE Premium
             </DialogTitle>
-            <p className="text-center text-muted-foreground">
-              Escolha o plano ideal para suas necessidades
-            </p>
-            <p className="text-center text-xs text-muted-foreground">
-              v0.4.2 Beta
-            </p>
-          </DialogHeader>
-
-          <div className="grid md:grid-cols-3 gap-6 mt-6">
-            {/* Plano Free */}
-            <Card className="border-2 border-border">
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl">Free</CardTitle>
-                <div className="text-3xl font-bold">R$ 0</div>
-                <p className="text-sm text-muted-foreground">Ideal para teste</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    5 transações/mês
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Relatórios básicos
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Suporte por email
-                  </li>
-                </ul>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => window.location.href = '/signup?plan=free'}
-                >
-                  Usar Grátis
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Plano Premium */}
-            <Card className="border-2 border-green-500 relative">
-              <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-500">
-                Mais Popular
-              </Badge>
-              <CardHeader className="text-center pt-6">
-                <CardTitle className="text-xl flex items-center justify-center gap-2">
-                  <Crown className="w-5 h-5 text-yellow-500" />
-                  Premium
-                </CardTitle>
-                <div className="space-y-1">
-                  <div className="text-3xl font-bold">R$ 9,90</div>
-                  <p className="text-sm text-muted-foreground">/mês</p>
-                  <p className="text-xs text-green-600">ou R$ 99,90/ano (16% OFF)</p>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Relatórios avançados
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Transações ilimitadas
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Categorias personalizadas
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Backup na nuvem
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Suporte prioritário
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full bg-green-500 hover:bg-green-600"
-                  onClick={handlePremiumClick}
-                >
-                  Assinar Agora
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Licença Exclusiva */}
-            <Card className="border-2 border-purple-200">
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl flex items-center justify-center gap-2">
-                  <Building className="w-5 h-5 text-purple-600" />
-                  Licença Exclusiva
-                </CardTitle>
-                <div className="text-2xl font-bold text-purple-600">Fale Conosco</div>
-                <p className="text-sm text-muted-foreground">Solução para empresas e governo</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Todos os recursos Premium
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Usuários ilimitados
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Integração personalizada
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Suporte dedicado
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    Valores especiais para contratos corporativos
-                  </li>
-                </ul>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-purple-300 text-purple-600 hover:bg-purple-50"
-                  onClick={handleExclusiveClick}
-                >
-                  Solicitar Cotação
-                </Button>
-              </CardContent>
-            </Card>
           </div>
-        </DialogContent>
-      </Dialog>
+          <p className="text-muted-foreground">
+            Desbloqueie todo o potencial do PINEE e transforme sua gestão financeira
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+              v0.4.3 Beta
+            </Badge>
+            <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
+              Oferta Limitada
+            </Badge>
+          </div>
+        </DialogHeader>
 
-      {/* Modal de Pagamento Premium */}
-      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Escolha seu plano Premium</DialogTitle>
-          </DialogHeader>
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-6">
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/30">
+            <Check className="w-5 h-5 text-green-500" />
+            <div>
+              <h4 className="font-medium text-foreground">Transações Ilimitadas</h4>
+              <p className="text-sm text-muted-foreground">
+                Adicione quantas transações precisar, sem limites
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/30">
+            <Star className="w-5 h-5 text-blue-500" />
+            <div>
+              <h4 className="font-medium text-foreground">Relatórios Avançados</h4>
+              <p className="text-sm text-muted-foreground">
+                Visualize seus dados com gráficos detalhados
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/30">
+            <Zap className="w-5 h-5 text-yellow-500" />
+            <div>
+              <h4 className="font-medium text-foreground">Suporte Prioritário</h4>
+              <p className="text-sm text-muted-foreground">
+                Obtenha respostas rápidas para suas dúvidas
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/30">
+            <TrendingUp className="w-5 h-5 text-purple-500" />
+            <div>
+              <h4 className="font-medium text-foreground">Planejamento Financeiro</h4>
+              <p className="text-sm text-muted-foreground">
+                Defina metas e acompanhe seu progresso
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/30">
+            <Shield className="w-5 h-5 text-orange-500" />
+            <div>
+              <h4 className="font-medium text-foreground">Segurança Reforçada</h4>
+              <p className="text-sm text-muted-foreground">
+                Proteção extra para seus dados financeiros
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/30">
+            <Crown className="w-5 h-5 text-red-500" />
+            <div>
+              <h4 className="font-medium text-foreground">Recursos Exclusivos</h4>
+              <p className="text-sm text-muted-foreground">
+                Acesso antecipado a novas funcionalidades
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Pricing Plans */}
+        <div className="px-6 py-8">
+          <h3 className="text-xl font-semibold text-center mb-4 text-foreground">
+            Escolha o plano ideal para você
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
+              <h4 className="text-lg font-medium text-foreground mb-2">Mensal</h4>
+              <p className="text-4xl font-bold text-foreground">R$ 19,90</p>
+              <p className="text-muted-foreground mb-4">
+                Acesso completo por um mês
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Transações ilimitadas
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Relatórios avançados
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Suporte prioritário
+                </li>
+              </ul>
+              <Button className="w-full mt-4">Assinar Mensal</Button>
+            </div>
+
+            <div className="p-6 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
+              <h4 className="text-lg font-medium text-foreground mb-2">Anual</h4>
+              <p className="text-4xl font-bold text-foreground">R$ 179,90</p>
+              <p className="text-muted-foreground mb-4">
+                Economize 25% em relação ao plano mensal
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Transações ilimitadas
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Relatórios avançados
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Suporte prioritário
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Recursos exclusivos
+                </li>
+              </ul>
+              <Button className="w-full mt-4">Assinar Anual</Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Testimonials */}
+        <div className="bg-muted p-8 rounded-lg">
+          <h3 className="text-xl font-semibold text-center mb-4 text-foreground">
+            O que nossos clientes estão dizendo
+          </h3>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <Card 
-                className={`cursor-pointer border-2 ${selectedPlan === 'monthly' ? 'border-green-500' : 'border-border'}`}
-                onClick={() => setSelectedPlan('monthly')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Mensal</h3>
-                      <p className="text-2xl font-bold">R$ 9,90<span className="text-sm font-normal">/mês</span></p>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${selectedPlan === 'monthly' ? 'bg-green-500 border-green-500' : 'border-gray-300'}`} />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card 
-                className={`cursor-pointer border-2 ${selectedPlan === 'yearly' ? 'border-green-500' : 'border-border'} relative`}
-                onClick={()=> setSelectedPlan('yearly')}
-              >
-                <Badge className="absolute -top-2 right-4 bg-green-500">16% OFF</Badge>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Anual</h3>
-                      <p className="text-2xl font-bold">R$ 99,90<span className="text-sm font-normal">/ano</span></p>
-                      <p className="text-sm text-muted-foreground">R$ 8,32/mês</p>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${selectedPlan === 'yearly' ? 'bg-green-500 border-green-500' : 'border-gray-300'}`} />
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="p-4 rounded-lg bg-background border border-border">
+              <p className="text-sm text-muted-foreground italic">
+                "O PINEE Premium transformou a forma como gerencio minhas
+                finanças. Os relatórios avançados me dão insights valiosos!"
+              </p>
+              <p className="text-foreground font-medium mt-2">- João Silva</p>
             </div>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowPaymentModal(false)} className="flex-1">
-                Voltar
-              </Button>
-              <Button className="flex-1 bg-green-500 hover:bg-green-600">
-                Pagar {selectedPlan === 'monthly' ? 'R$ 9,90' : 'R$ 99,90'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Modal de Contato Comercial */}
-      <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Solicitar Cotação - Licença Exclusiva</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="company">Nome da Empresa/Órgão</Label>
-              <Input
-                id="company"
-                value={contactForm.company}
-                onChange={(e) => setContactForm({...contactForm, company: e.target.value})}
-                placeholder="Digite o nome da sua empresa ou órgão"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="users">Número de Usuários</Label>
-              <Input
-                id="users"
-                value={contactForm.users}
-                onChange={(e) => setContactForm({...contactForm, users: e.target.value})}
-                placeholder="Quantos usuários utilizarão o sistema?"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={contactForm.phone}
-                onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowContactModal(false)} className="flex-1">
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleContactSubmit} 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                disabled={!contactForm.company || !contactForm.users || !contactForm.phone}
-              >
-                Enviar Solicitação
-              </Button>
+            <div className="p-4 rounded-lg bg-background border border-border">
+              <p className="text-sm text-muted-foreground italic">
+                "O suporte prioritário é incrível! Sempre que tenho dúvidas, sou
+                atendido rapidamente."
+              </p>
+              <p className="text-foreground font-medium mt-2">- Maria Oliveira</p>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+
+        {/* Guarantee */}
+        <div className="bg-green-50 dark:bg-green-900/10 p-8 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-5 h-5 text-green-500" />
+            <h3 className="text-xl font-semibold text-foreground">
+              Garantia de Satisfação
+            </h3>
+          </div>
+          <p className="text-muted-foreground">
+            Estamos tão confiantes de que você vai amar o PINEE Premium, que
+            oferecemos uma garantia de 7 dias. Se você não estiver satisfeito,
+            reembolsaremos seu dinheiro.
+          </p>
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold text-foreground mb-4">
+            Comece agora e transforme suas finanças!
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Assine o PINEE Premium e tenha acesso a todos os recursos exclusivos
+          </p>
+          <Button size="lg">Assinar PINEE Premium</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

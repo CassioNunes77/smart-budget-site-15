@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -187,7 +186,7 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Versão</label>
-              <p className="text-foreground">v0.4.2 Beta</p>
+              <p className="text-foreground">v0.4.3 Beta</p>
             </div>
             <Separator />
             <div>

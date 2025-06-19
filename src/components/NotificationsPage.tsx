@@ -11,7 +11,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 const NotificationsPage: React.FC = () => {
   const [emailNotifications, setEmailNotifications] = useLocalStorage('email-notifications', true);
   const [pushNotifications, setPushNotifications] = useLocalStorage('push-notifications', true);
-  const [dashboardTips, setDashboardTips] = useLocalStorage('dashboard-tips-enabled', true);
+  const [dashboardTips, setDashboardTips] = useLocalStorage('dashboard-tips-visible', true);
   const [weeklyReports, setWeeklyReports] = useLocalStorage('weekly-reports', false);
   const [transactionAlerts, setTransactionAlerts] = useLocalStorage('transaction-alerts', true);
 

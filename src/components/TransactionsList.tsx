@@ -120,26 +120,23 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 
   const sortTransactions = (transactionList: Transaction[]) => {
     return [...transactionList].sort((a, b) => {
-      let comparison = 0;
-      
       switch (sortBy) {
         case 'dateAdded':
-          comparison = a.id.localeCompare(b.id);
-          break;
+          // Ordenar por ordem de criação (ID é gerado sequencialmente)
+          // IDs mais recentes (maiores) aparecem primeiro
+          return b.id.localeCompare(a.id);
         case 'transactionDate':
-          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-          break;
+          // Ordenar por data da transação
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
         case 'amount':
-          comparison = a.amount - b.amount;
-          break;
+          // Ordenar por valor
+          return b.amount - a.amount;
         case 'description':
-          comparison = a.description.localeCompare(b.description);
-          break;
+          // Ordenar por descrição
+          return a.description.localeCompare(b.description);
         default:
-          comparison = 0;
+          return 0;
       }
-      
-      return -comparison; // Sempre decrescente
     });
   };
 
