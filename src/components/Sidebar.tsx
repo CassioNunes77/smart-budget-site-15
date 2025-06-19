@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
               </div>
               <div>
                 <h1 className="text-lg font-bold text-sidebar-foreground">PINEE</h1>
-                <p className="text-xs text-sidebar-foreground/60">v0.3.5 Beta</p>
+                <p className="text-xs text-sidebar-foreground/60">v0.4.1 Beta</p>
               </div>
             </div>
             <Button

@@ -1,11 +1,17 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Palette, Info, Shield, HelpCircle, Moon, Sun } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { User, Palette, Info, Shield, HelpCircle, Moon, Sun, MessageSquare } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
   id: string;
@@ -21,6 +27,9 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange }) => {
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
+  const [feedbackText, setFeedbackText] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   
   const currencyOptions = [
     { value: 'BRL', label: 'Real Brasileiro (BRL)' },
@@ -28,6 +37,39 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
     { value: 'EUR', label: 'Euro (EUR)' },
     { value: 'BTC', label: 'Bitcoin (BTC)' }
   ];
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) {
+      toast({
+        title: "Feedback vazio",
+        description: "Por favor, escreva seu feedback antes de enviar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmittingFeedback(true);
+    
+    try {
+      // Simular envio de feedback
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Feedback enviado!",
+        description: "Obrigado pelo seu feedback. Nossa equipe irá analisar suas sugestões.",
+      });
+      
+      setFeedbackText('');
+    } catch (error) {
+      toast({
+        title: "Erro ao enviar feedback",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -124,7 +166,7 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Versão</label>
-              <p className="text-foreground">v0.3.5 Beta</p>
+              <p className="text-foreground">v0.4.1 Beta</p>
             </div>
             <Separator />
             <div>
@@ -191,9 +233,41 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
               </div>
               <div className="p-4 border rounded-lg">
                 <h4 className="font-medium mb-2">Feedback</h4>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-3">
                   Sua opinião é importante para melhorarmos o app
                 </p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="w-full">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Enviar Feedback
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Enviar Feedback</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="feedback">Seu feedback</Label>
+                        <Textarea
+                          id="feedback"
+                          placeholder="Conte-nos sua experiência, sugestões ou problemas encontrados..."
+                          value={feedbackText}
+                          onChange={(e) => setFeedbackText(e.target.value)}
+                          className="min-h-[120px]"
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleFeedbackSubmit} 
+                        disabled={isSubmittingFeedback}
+                        className="w-full"
+                      >
+                        {isSubmittingFeedback ? 'Enviando...' : 'Enviar Feedback'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </CardContent>

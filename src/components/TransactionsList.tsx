@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search } from 'lucide-react';
+import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search, ArrowUpDown } from 'lucide-react';
 import CategoryIcon, { getCategoryBadgeColor } from '@/components/CategoryIcon';
 
 interface Transaction {
@@ -28,6 +28,7 @@ interface TransactionsListProps {
   categories?: string[];
   showUpload?: boolean;
   onUploadCSV?: (file: File) => void;
+  showTotals?: boolean;
 }
 
 const TransactionsList: React.FC<TransactionsListProps> = ({ 
@@ -38,12 +39,15 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
   showFilters = false,
   categories = [],
   showUpload = false,
-  onUploadCSV
+  onUploadCSV,
+  showTotals = true
 }) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<string>('dateAdded');
+  const [sortOrder, setSortOrder] = useState<string>('desc');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -115,6 +119,32 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     onUpdateStatus(transaction.id, newStatus);
   };
 
+  const sortTransactions = (transactionList: Transaction[]) => {
+    return [...transactionList].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'dateAdded':
+          // Assumindo que ID contém timestamp ou usando índice
+          comparison = a.id.localeCompare(b.id);
+          break;
+        case 'transactionDate':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'description':
+          comparison = a.description.localeCompare(b.description);
+          break;
+        default:
+          comparison = 0;
+      }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  };
+
   const filterTransactions = () => {
     let filtered = [...transactions];
 
@@ -145,10 +175,19 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       );
     }
 
-    return filtered;
+    return sortTransactions(filtered);
   };
 
   const filteredTransactions = filterTransactions();
+
+  // Calcular totais
+  const totalIncome = filteredTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = filteredTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
 
   if (transactions.length === 0) {
     return (
@@ -160,6 +199,33 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 
   return (
     <div className="space-y-4">
+      {showTotals && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Receita Projetada</p>
+                  <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Despesa Projetada</p>
+                  <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</p>
+                </div>
+                <TrendingDown className="w-8 h-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {showFilters && (
         <div className="space-y-4">
           {/* Barra de Filtros com Labels */}
@@ -219,6 +285,36 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                       {category}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ordenação */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Ordenar por</Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dateAdded">Data de Adição</SelectItem>
+                  <SelectItem value="transactionDate">Data da Transação</SelectItem>
+                  <SelectItem value="amount">Valor</SelectItem>
+                  <SelectItem value="description">Descrição</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ordem */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Ordem</Label>
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Decrescente</SelectItem>
+                  <SelectItem value="asc">Crescente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
