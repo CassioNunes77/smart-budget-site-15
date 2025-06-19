@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { User } from 'firebase/auth';
 import { auth, signInWithGoogle, logout, onAuthStateChange, createUserDocument } from '@/services/firebase';
 
 export const useFirebaseAuth = () => {
@@ -37,62 +37,6 @@ export const useFirebaseAuth = () => {
       unsubscribe();
     };
   }, []);
-
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      setError(null);
-      console.log('Tentando fazer login com email...');
-      
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Login com email concluído com sucesso:', result.user.email);
-      
-      return result;
-      
-    } catch (error: any) {
-      console.error('Erro no login com email:', error);
-      
-      let errorMessage = 'Erro no login com email';
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'Usuário não encontrado';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Senha incorreta';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Email inválido';
-      }
-      
-      setError(errorMessage);
-      throw error;
-    }
-  };
-
-  const signUpWithEmail = async (email: string, password: string, name: string) => {
-    try {
-      setError(null);
-      console.log('Tentando criar conta com email...');
-      
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('Conta criada com sucesso:', result.user.email);
-      
-      return result;
-      
-    } catch (error: any) {
-      console.error('Erro ao criar conta:', error);
-      
-      let errorMessage = 'Erro ao criar conta';
-      
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Este email já está sendo usado';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'A senha deve ter pelo menos 6 caracteres';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Email inválido';
-      }
-      
-      setError(errorMessage);
-      throw error;
-    }
-  };
 
   const handleGoogleLogin = async () => {
     try {
@@ -140,9 +84,6 @@ export const useFirebaseAuth = () => {
     user,
     loading,
     error,
-    signInWithEmail,
-    signUpWithEmail,
-    signInWithGoogle: handleGoogleLogin,
     handleGoogleLogin,
     handleLogout
   };
