@@ -524,7 +524,16 @@ const Dashboard: React.FC = () => {
   }
 
   if (showAuthModal && !firebaseUser) {
-    return <AuthModal onLogin={handleLogin} />;
+    return (
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          setShowAuthModal(false);
+          setCurrentPage('dashboard');
+        }}
+      />
+    );
   }
 
   const handleUpdateCategories = async (newCategories: string[]) => {
