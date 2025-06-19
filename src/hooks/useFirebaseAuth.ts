@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { auth, signInWithGoogle, logout, onAuthStateChange, createUserDocument } from '@/services/firebase';
+import { toast } from '@/components/ui/use-toast';
 
 export const useFirebaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -21,6 +22,13 @@ export const useFirebaseAuth = () => {
         // Se o usuário acabou de fazer login, criar documento no Firestore
         if (firebaseUser) {
           await createUserDocument(firebaseUser);
+          
+          // Mostrar notificação de boas-vindas
+          toast({
+            title: `Bem-vindo ao PINEE, ${firebaseUser.displayName || 'usuário'}!`,
+            description: 'Login realizado com sucesso',
+            duration: 3000,
+          });
         }
         
         setLoading(false);

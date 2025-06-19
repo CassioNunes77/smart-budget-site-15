@@ -124,13 +124,15 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       
       switch (sortBy) {
         case 'dateAdded':
-          comparison = a.id.localeCompare(b.id);
+          // Ordenar por ID (que representa a sequência de criação)
+          // IDs maiores são mais recentes, então invertemos para mostrar mais recentes primeiro
+          comparison = b.id.localeCompare(a.id);
           break;
         case 'transactionDate':
-          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          comparison = new Date(b.date).getTime() - new Date(a.date).getTime();
           break;
         case 'amount':
-          comparison = a.amount - b.amount;
+          comparison = b.amount - a.amount;
           break;
         case 'description':
           comparison = a.description.localeCompare(b.description);
@@ -139,7 +141,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
           comparison = 0;
       }
       
-      return -comparison; // Sempre decrescente
+      return comparison;
     });
   };
 
