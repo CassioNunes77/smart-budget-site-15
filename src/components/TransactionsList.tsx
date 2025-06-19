@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search, ArrowUpDown } from 'lucide-react';
+import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search } from 'lucide-react';
 import CategoryIcon, { getCategoryBadgeColor } from '@/components/CategoryIcon';
 
 interface Transaction {
@@ -47,7 +47,6 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<string>('dateAdded');
-  const [sortOrder, setSortOrder] = useState<string>('desc');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -125,7 +124,6 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       
       switch (sortBy) {
         case 'dateAdded':
-          // Assumindo que ID contém timestamp ou usando índice
           comparison = a.id.localeCompare(b.id);
           break;
         case 'transactionDate':
@@ -141,7 +139,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
           comparison = 0;
       }
       
-      return sortOrder === 'desc' ? -comparison : comparison;
+      return -comparison; // Sempre decrescente
     });
   };
 
@@ -304,20 +302,6 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Ordem */}
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Ordem</Label>
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="desc">Decrescente</SelectItem>
-                  <SelectItem value="asc">Crescente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             
             {showUpload && (
               <div className="flex flex-col gap-1">
@@ -347,7 +331,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 
       <div className="space-y-3">
         {filteredTransactions.map((transaction) => {
-          const CategoryIcon = getCategoryIcon(transaction.category);
+          const CategoryIconComponent = getCategoryIcon(transaction.category);
           return (
             <div
               key={transaction.id}
@@ -372,7 +356,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                       {transaction.description}
                     </h3>
                     <Badge className={`text-xs flex items-center gap-1 ${getCategoryColor(transaction.category)}`}>
-                      <CategoryIcon categoryName={transaction.category} className="w-3 h-3" />
+                      <CategoryIconComponent categoryName={transaction.category} className="w-3 h-3" />
                       {transaction.category}
                     </Badge>
                     <Badge 

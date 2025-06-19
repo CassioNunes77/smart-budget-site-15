@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { User, Palette, Info, Shield, HelpCircle, Moon, Sun, MessageSquare } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useToast } from '@/hooks/use-toast';
+import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import firestoreService from '@/services/firestoreService';
 
 interface User {
   id: string;
@@ -28,8 +30,10 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange }) => {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
+  const { user: firebaseUser } = useFirebaseAuth();
   const [feedbackText, setFeedbackText] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const currencyOptions = [
     { value: 'BRL', label: 'Real Brasileiro (BRL)' },
@@ -48,11 +52,27 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
       return;
     }
 
+    if (!firebaseUser) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para enviar feedback.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmittingFeedback(true);
     
     try {
-      // Simular envio de feedback
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const feedbackData = {
+        userName: firebaseUser.displayName || firebaseUser.email || 'Usuário Anônimo',
+        userEmail: firebaseUser.email || '',
+        feedback: feedbackText.trim(),
+        userId: firebaseUser.uid,
+        createdAt: new Date().toISOString()
+      };
+
+      await firestoreService.saveDocument('feedbacks', feedbackData);
       
       toast({
         title: "Feedback enviado!",
@@ -60,7 +80,9 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
       });
       
       setFeedbackText('');
+      setIsDialogOpen(false);
     } catch (error) {
+      console.error('Erro ao enviar feedback:', error);
       toast({
         title: "Erro ao enviar feedback",
         description: "Tente novamente mais tarde.",
@@ -108,7 +130,6 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
           </CardContent>
         </Card>
 
-        {/* Preferências */}
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -166,7 +187,7 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Versão</label>
-              <p className="text-foreground">v0.4.1 Beta</p>
+              <p className="text-foreground">v0.4.2 Beta</p>
             </div>
             <Separator />
             <div>
@@ -236,7 +257,7 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
                 <p className="text-sm text-muted-foreground mb-3">
                   Sua opinião é importante para melhorarmos o app
                 </p>
-                <Dialog>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="w-full">
                       <MessageSquare className="w-4 h-4 mr-2" />
@@ -254,9 +275,17 @@ const Settings: React.FC<SettingsProps> = ({ user, currency, onCurrencyChange })
                           id="feedback"
                           placeholder="Conte-nos sua experiência, sugestões ou problemas encontrados..."
                           value={feedbackText}
-                          onChange={(e) => setFeedbackText(e.target.value)}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            if (text.length <= 140) {
+                              setFeedbackText(text);
+                            }
+                          }}
                           className="min-h-[120px]"
                         />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {feedbackText.length}/140 caracteres
+                        </p>
                       </div>
                       <Button 
                         onClick={handleFeedbackSubmit} 
