@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -95,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, onLogout, 
               </div>
               <div>
                 <h1 className="text-lg font-bold text-sidebar-foreground">PINEE</h1>
-                <p className="text-xs text-sidebar-foreground/60">v0.4.3 Beta</p>
+                <p className="text-xs text-sidebar-foreground/60">v0.4.4 Beta</p>
               </div>
             </div>
             <Button

@@ -124,8 +124,10 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       
       switch (sortBy) {
         case 'dateAdded':
-          // Ordenar por ID (que representa a sequência de criação)
-          // IDs maiores são mais recentes, então invertemos para mostrar mais recentes primeiro
+          // Ordenar por ID (que representa exclusivamente a sequência de criação no sistema)
+          // Considera apenas quando a transação foi adicionada ao sistema, não suas datas internas
+          // IDs são strings sequenciais, então comparação lexicográfica funciona
+          // Mais recentes primeiro (ordem decrescente)
           comparison = b.id.localeCompare(a.id);
           break;
         case 'transactionDate':

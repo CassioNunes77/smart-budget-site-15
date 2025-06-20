@@ -66,11 +66,19 @@ const MonthlySummary: React.FC<MonthlySummaryProps> = ({
 
   const monthlyTransactions = getMonthlyTransactions();
 
-  const totalIncome = monthlyTransactions
+  // Calcular receitas e despesas projetadas baseadas no período filtrado
+  // Considerando apenas transações futuras dentro do período
+  const today = new Date();
+  const futureTransactions = monthlyTransactions.filter(t => {
+    const transactionDate = new Date(t.date);
+    return transactionDate >= today;
+  });
+
+  const totalIncome = futureTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = monthlyTransactions
+  const totalExpenses = futureTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
@@ -118,34 +126,34 @@ const MonthlySummary: React.FC<MonthlySummaryProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Receitas</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">Receita Projetada</CardTitle>
               <TrendingUp className="h-6 w-6 opacity-90" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(totalIncome, currency)}</div>
-              <p className="text-xs opacity-80 mt-1">Total recebido</p>
+              <p className="text-xs opacity-80 mt-1">Receitas futuras no período</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Despesas</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">Despesa Projetada</CardTitle>
               <TrendingDown className="h-6 w-6 opacity-90" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(totalExpenses, currency)}</div>
-              <p className="text-xs opacity-80 mt-1">Total gasto</p>
+              <p className="text-xs opacity-80 mt-1">Despesas futuras no período</p>
             </CardContent>
           </Card>
 
           <Card className={`bg-gradient-to-br ${balance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Saldo</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">Saldo Projetado</CardTitle>
               <DollarSign className="h-6 w-6 opacity-90" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(balance, currency)}</div>
-              <p className="text-xs opacity-80 mt-1">Diferença do mês</p>
+              <p className="text-xs opacity-80 mt-1">Diferença projetada</p>
             </CardContent>
           </Card>
         </div>
