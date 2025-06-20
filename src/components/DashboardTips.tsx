@@ -6,10 +6,10 @@ import { X, Lightbulb, TrendingUp, PieChart, Receipt } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface DashboardTipsProps {
-  showTips?: boolean; // Tornado opcional pois agora sempre mostra por padrão
+  showTips: boolean;
 }
 
-const DashboardTips: React.FC<DashboardTipsProps> = ({ showTips = true }) => {
+const DashboardTips: React.FC<DashboardTipsProps> = ({ showTips }) => {
   const [tipsVisible, setTipsVisible] = useLocalStorage('dashboard-tips-visible', true);
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
 
@@ -46,7 +46,6 @@ const DashboardTips: React.FC<DashboardTipsProps> = ({ showTips = true }) => {
     }
   }, [tips.length]);
 
-  // Sempre mostrar as dicas por padrão, mas permitir que o usuário feche
   if (!showTips || !tipsVisible) {
     return null;
   }
@@ -55,7 +54,7 @@ const DashboardTips: React.FC<DashboardTipsProps> = ({ showTips = true }) => {
   const TipIcon = currentTip.icon;
 
   return (
-    <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 mb-6">
+    <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3">
@@ -87,7 +86,6 @@ const DashboardTips: React.FC<DashboardTipsProps> = ({ showTips = true }) => {
             size="sm"
             onClick={() => setTipsVisible(false)}
             className="text-muted-foreground hover:text-foreground"
-            title="Fechar dicas"
           >
             <X className="w-4 h-4" />
           </Button>
