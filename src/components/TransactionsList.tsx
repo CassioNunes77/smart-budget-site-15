@@ -17,6 +17,7 @@ interface Transaction {
   category: string;
   date: string;
   status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
+  createdAt?: string; // Campo de timestamp de criação
 }
 
 interface TransactionsListProps {
@@ -124,9 +125,20 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       
       switch (sortBy) {
         case 'dateAdded':
-          // Ordenar por ID (que representa a sequência de criação)
-          // IDs maiores são mais recentes, então invertemos para mostrar mais recentes primeiro
-          comparison = b.id.localeCompare(a.id);
+          // Usar createdAt se disponível, caso contrário usar o ID como fallback
+          if (a.createdAt && b.createdAt) {
+            comparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          } else {
+            // Fallback para ordenação por ID (mais recentes primeiro)
+            comparison = b.id.localeCompare(a.id);
+          }
+          console.log('Ordenando por data de adição:', { 
+            aId: a.id, 
+            bId: b.id, 
+            aCreatedAt: a.createdAt, 
+            bCreatedAt: b.createdAt, 
+            comparison 
+          });
           break;
         case 'transactionDate':
           comparison = new Date(b.date).getTime() - new Date(a.date).getTime();

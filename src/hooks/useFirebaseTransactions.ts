@@ -21,6 +21,7 @@ interface Transaction {
   isRecurring?: boolean;
   recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
   recurringEndDate?: string;
+  createdAt?: string; // Adicionando campo de timestamp de criação
 }
 
 export const useFirebaseTransactions = () => {
@@ -80,7 +81,7 @@ export const useFirebaseTransactions = () => {
   }, [user?.uid]); // Dependência específica no UID
 
   // Adicionar transação
-  const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
+  const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'createdAt'>) => {
     try {
       console.log('=== HOOK - addTransaction ===');
       console.log('Dados recebidos no hook:', transactionData);

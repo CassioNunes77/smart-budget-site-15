@@ -14,10 +14,11 @@ export interface Transaction {
   recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
   recurringEndDate?: string;
   userId: string;
+  createdAt: string; // Timestamp de quando a transação foi criada
 }
 
 // Adicionar nova transação
-export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>): Promise<string> => {
+export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId' | 'createdAt'>): Promise<string> => {
   const user = auth.currentUser;
   console.log('=== ADD TRANSACTION DEBUG ===');
   console.log('Estado do usuário:', user?.uid, user?.email);
@@ -33,10 +34,11 @@ export const addTransaction = async (transactionData: Omit<Transaction, 'id' | '
   try {
     const transactionWithUserId = {
       ...transactionData,
-      userId: user.uid
+      userId: user.uid,
+      createdAt: new Date().toISOString() // Adicionar timestamp de criação
     };
     
-    console.log('Transação completa com userId:', transactionWithUserId);
+    console.log('Transação completa com userId e createdAt:', transactionWithUserId);
     
     const docId = await firestoreService.saveDocument('transactions', transactionWithUserId);
     console.log('Transação salva com sucesso. ID do documento:', docId);
@@ -148,8 +150,8 @@ export const updateTransaction = async (transactionId: string, updates: Partial<
 
   console.log('Atualizando transação:', transactionId, updates);
 
-  // Remover campos que não devem ser atualizados
-  const { id, userId, ...updateData } = updates;
+  // Remover campos que não devem ser atualizados, incluindo createdAt
+  const { id, userId, createdAt, ...updateData } = updates;
   
   await firestoreService.updateDocument('transactions', transactionId, updateData);
 };
