@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useMemo } from 'react';
-import * as LucideIcons from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Clock, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import TransactionsList from './TransactionsList';
@@ -202,7 +202,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             onPeriodChange={onPeriodChange}
           />
           <Button onClick={onAddTransaction} className="bg-green-600 hover:bg-green-700">
-            <LucideIcons.Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-2" />
             Nova Transação
           </Button>
         </div>
@@ -213,7 +213,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium opacity-90">Receitas</CardTitle>
-            <LucideIcons.TrendingUp className="h-6 w-6 opacity-90" />
+            <TrendingUp className="h-6 w-6 opacity-90" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalIncome)}</div>
@@ -224,7 +224,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium opacity-90">Despesas</CardTitle>
-            <LucideIcons.TrendingDown className="h-6 w-6 opacity-90" />
+            <TrendingDown className="h-6 w-6 opacity-90" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
@@ -235,7 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <Card className={`bg-gradient-to-br ${consolidatedBalance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium opacity-90">Saldo Consolidado</CardTitle>
-            <LucideIcons.DollarSign className="h-6 w-6 opacity-90" />
+            <DollarSign className="h-6 w-6 opacity-90" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(consolidatedBalance)}</div>
@@ -248,7 +248,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
-            <LucideIcons.Clock className="w-5 h-5 text-muted-foreground" />
+            <Clock className="w-5 h-5 text-muted-foreground" />
             <CardTitle>Transações Recentes</CardTitle>
           </div>
           <p className="text-sm text-muted-foreground">
