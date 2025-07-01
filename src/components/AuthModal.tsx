@@ -114,7 +114,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
                 <div className="space-y-3 md:space-y-4">
                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-green-100">
                     <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    <span className="text-sm md:text-base">Configuração em menos de 2 minutos</span>
+                    <span className="text-sm md:text-base">Configuração em menos de 1 minutos</span>
                   </div>
                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-green-100">
                     <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
