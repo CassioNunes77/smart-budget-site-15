@@ -45,7 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     }).format(value);
   };
 
-  // Filtrar transações por período baseado na data de adição
+  // Filtrar transações por período baseado na data de adição (createdAt)
   const filteredTransactions = useMemo(() => {
     const now = new Date();
     
@@ -82,18 +82,37 @@ const Dashboard: React.FC<DashboardProps> = ({
     });
   }, [transactions, selectedPeriod, selectedYear]);
 
-  // Obter transações recentes (últimas 5 adicionadas)
+  // Obter transações recentes ordenadas por data de criação (createdAt)
   const recentTransactions = useMemo(() => {
-    return [...filteredTransactions]
+    console.log('=== DASHBOARD - Calculando transações recentes ===');
+    console.log('Total de transações filtradas:', filteredTransactions.length);
+    
+    const sorted = [...filteredTransactions]
       .sort((a, b) => {
-        // Ordenar por data de criação (mais recentes primeiro)
+        // Ordenar por data de criação (createdAt) - mais recentes primeiro
         if (a.createdAt && b.createdAt) {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          console.log('Comparando:', {
+            a: { id: a.id, createdAt: a.createdAt, timestamp: dateA },
+            b: { id: b.id, createdAt: b.createdAt, timestamp: dateB },
+            result: dateB - dateA
+          });
+          return dateB - dateA;
         }
-        // Fallback para ordenação por ID
+        
+        // Fallback para ID se não tiver createdAt
         return b.id.localeCompare(a.id);
       })
       .slice(0, 5);
+    
+    console.log('Transações recentes ordenadas:', sorted.map(t => ({
+      id: t.id,
+      description: t.description,
+      createdAt: t.createdAt
+    })));
+    
+    return sorted;
   }, [filteredTransactions]);
 
   // Calcular totais baseados nas transações filtradas
