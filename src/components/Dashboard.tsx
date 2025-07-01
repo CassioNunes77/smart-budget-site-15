@@ -4,17 +4,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, DollarSign, Clock, Plus } from 'lucide-react';
 import TransactionsList from './TransactionsList';
 import DashboardPeriodFilter, { PeriodType } from './DashboardPeriodFilter';
-
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  category: string;
-  date: string;
-  status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
-  createdAt?: string;
-}
+import type { Transaction } from '@/types/transaction';
 
 interface DashboardProps {
   transactions: Transaction[];

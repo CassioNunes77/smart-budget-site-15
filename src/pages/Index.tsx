@@ -24,19 +24,7 @@ import { useFirebaseCategories } from '@/hooks/useFirebaseCategories';
 import { migrateLocalData } from '@/services/migrationService';
 import DashboardPeriodFilter, { PeriodType } from '@/components/DashboardPeriodFilter';
 import MonthlySummary from '@/components/MonthlySummary';
-
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  category: string;
-  date: string;
-  status?: 'paid' | 'unpaid' | 'received' | 'unreceived';
-  isRecurring?: boolean;
-  recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
-  recurringEndDate?: string;
-}
+import type { Transaction } from '@/types/transaction';
 
 interface User {
   id: string;
