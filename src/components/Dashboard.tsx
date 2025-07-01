@@ -124,42 +124,48 @@ const Dashboard: React.FC<DashboardProps> = ({
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  // Calcular saldo consolidado (cumulativo baseado no período selecionado)
+  // Calcular saldo consolidado (cumulativo - SEMPRE incluir transações anteriores)
   const consolidatedBalance = useMemo(() => {
+    console.log('=== CALCULANDO SALDO CONSOLIDADO ===');
+    console.log('Período selecionado:', selectedPeriod);
+    console.log('Ano selecionado:', selectedYear);
+    console.log('Total de transações:', transactions.length);
+    
     const now = new Date();
-    let endDate: Date;
+    let startDate: Date;
     
     switch (selectedPeriod) {
       case 'week':
-        // Incluir todas as transações até o final da semana atual
-        endDate = new Date(now);
+        // Para semana: incluir tudo até agora
+        startDate = new Date(0); // Todas as transações
         break;
       case 'month':
-        // Incluir todas as transações até o final do mês atual
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        // Para mês: incluir tudo até o final do mês atual
+        startDate = new Date(0); // Todas as transações
         break;
       case 'quarter':
-        // Incluir todas as transações até o final do trimestre atual
-        const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
-        endDate = new Date(now.getFullYear(), quarterMonth + 3, 0);
+        // Para trimestre: incluir tudo até o final do trimestre atual
+        startDate = new Date(0); // Todas as transações
         break;
       case 'year':
-        // Incluir todas as transações até o final do ano selecionado
+        // Para ano: incluir tudo até o final do ano selecionado
         const year = selectedYear || now.getFullYear();
-        endDate = new Date(year, 11, 31);
+        startDate = new Date(0); // Todas as transações
         break;
       case 'all':
       default:
         // Incluir todas as transações
-        endDate = new Date();
+        startDate = new Date(0);
         break;
     }
     
-    // Para saldo consolidado, incluir TODAS as transações até a data final do período
+    // Para saldo consolidado, incluir TODAS as transações (cumulativo)
     const cumulativeTransactions = transactions.filter(transaction => {
       const createdDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date();
-      return createdDate <= endDate;
+      return createdDate >= startDate;
     });
+    
+    console.log('Transações cumulativas:', cumulativeTransactions.length);
     
     const cumulativeIncome = cumulativeTransactions
       .filter(t => t.type === 'income')
@@ -169,7 +175,13 @@ const Dashboard: React.FC<DashboardProps> = ({
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
     
-    return cumulativeIncome - cumulativeExpenses;
+    const balance = cumulativeIncome - cumulativeExpenses;
+    
+    console.log('Receitas cumulativas:', cumulativeIncome);
+    console.log('Despesas cumulativas:', cumulativeExpenses);
+    console.log('Saldo consolidado final:', balance);
+    
+    return balance;
   }, [transactions, selectedPeriod, selectedYear]);
 
   const getPeriodLabel = () => {
