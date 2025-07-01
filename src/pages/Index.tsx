@@ -275,7 +275,79 @@ const Dashboard: React.FC = () => {
     };
   };
 
+  // Calcular saldo consolidado cumulativo (específico para o card de saldo consolidado)
+  const getCumulativeConsolidatedBalance = () => {
+    const now = new Date();
+    let endDate: Date;
+    
+    switch (dashboardPeriod) {
+      case 'week':
+        // Para semana: cumulativo até o final da semana atual
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        endDate = new Date(weekStart);
+        endDate.setDate(weekStart.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case 'month':
+        // Para mês: cumulativo até o final do mês atual
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case 'quarter':
+        // Para trimestre: cumulativo até o final do trimestre atual
+        const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+        endDate = new Date(now.getFullYear(), quarterMonth + 3, 0);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case 'year':
+        // Para ano: soma apenas dentro daquele ano (não cumulativo)
+        const yearStart = new Date(dashboardYear, 0, 1);
+        const yearEnd = new Date(dashboardYear, 11, 31, 23, 59, 59, 999);
+        
+        const yearTransactions = transactions.filter(transaction => {
+          const transactionDate = new Date(transaction.date);
+          return transactionDate >= yearStart && transactionDate <= yearEnd;
+        });
+        
+        const yearIncome = yearTransactions
+          .filter(t => t.type === 'income' && (!t.status || t.status === 'received'))
+          .reduce((sum, t) => sum + t.amount, 0);
+          
+        const yearExpenses = yearTransactions
+          .filter(t => t.type === 'expense' && (!t.status || t.status === 'paid'))
+          .reduce((sum, t) => sum + t.amount, 0);
+        
+        return yearIncome - yearExpenses;
+        
+      case 'all':
+      default:
+        // Para todos: incluir todas as transações
+        endDate = new Date();
+        break;
+    }
+    
+    // Para períodos menores que ano: incluir TODAS as transações até a data final do período
+    if (dashboardPeriod !== 'year') {
+      const cumulativeTransactions = transactions.filter(transaction => {
+        const transactionDate = new Date(transaction.date);
+        return transactionDate <= endDate;
+      });
+      
+      const cumulativeIncome = cumulativeTransactions
+        .filter(t => t.type === 'income' && (!t.status || t.status === 'received'))
+        .reduce((sum, t) => sum + t.amount, 0);
+        
+      const cumulativeExpenses = cumulativeTransactions
+        .filter(t => t.type === 'expense' && (!t.status || t.status === 'paid'))
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      return cumulativeIncome - cumulativeExpenses;
+    }
+  };
+
   const financialSummary = getFinancialSummary();
+  const cumulativeConsolidatedBalance = getCumulativeConsolidatedBalance();
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -671,7 +743,7 @@ const Dashboard: React.FC = () => {
 
             {/* Cards de Saldo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className={`bg-gradient-to-br ${financialSummary.consolidatedBalance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200`}>
+              <Card className={`bg-gradient-to-br ${cumulativeConsolidatedBalance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200`}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium opacity-90">Saldo Consolidado</CardTitle>
                   <div className="flex items-center gap-2">
@@ -688,9 +760,11 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {showBalance ? formatCurrency(financialSummary.consolidatedBalance, currency) : '••••••'}
+                    {showBalance ? formatCurrency(cumulativeConsolidatedBalance, currency) : '••••••'}
                   </div>
-                  <p className="text-xs opacity-80 mt-1">Apenas valores confirmados</p>
+                  <p className="text-xs opacity-80 mt-1">
+                    {dashboardPeriod === 'year' ? 'Apenas valores confirmados do ano' : 'Cumulativo até o período'}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -823,8 +897,8 @@ const Dashboard: React.FC = () => {
                     <hr />
                     <div className="flex justify-between items-center">
                       <span className="text-foreground font-medium">Saldo Consolidado:</span>
-                      <span className={`font-bold text-xl ${financialSummary.consolidatedBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {formatCurrency(financialSummary.consolidatedBalance, currency)}
+                      <span className={`font-bold text-xl ${cumulativeConsolidatedBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {formatCurrency(cumulativeConsolidatedBalance, currency)}
                       </span>
                     </div>
                   </div>

@@ -131,45 +131,68 @@ const Dashboard: React.FC<DashboardProps> = ({
     
     switch (selectedPeriod) {
       case 'week':
-        // Incluir todas as transações até o final da semana atual
-        endDate = new Date(now);
+        // Para semana: cumulativo até o final da semana atual
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        endDate = new Date(weekStart);
+        endDate.setDate(weekStart.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
         break;
       case 'month':
-        // Incluir todas as transações até o final do mês atual
+        // Para mês: cumulativo até o final do mês atual
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
         break;
       case 'quarter':
-        // Incluir todas as transações até o final do trimestre atual
+        // Para trimestre: cumulativo até o final do trimestre atual
         const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
         endDate = new Date(now.getFullYear(), quarterMonth + 3, 0);
+        endDate.setHours(23, 59, 59, 999);
         break;
       case 'year':
-        // Incluir todas as transações até o final do ano selecionado
+        // Para ano: soma apenas dentro daquele ano (não cumulativo)
         const year = selectedYear || now.getFullYear();
-        endDate = new Date(year, 11, 31);
-        break;
+        const yearStart = new Date(year, 0, 1);
+        const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
+        
+        const yearTransactions = transactions.filter(transaction => {
+          const transactionDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date();
+          return transactionDate >= yearStart && transactionDate <= yearEnd;
+        });
+        
+        const yearIncome = yearTransactions
+          .filter(t => t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+          
+        const yearExpenses = yearTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+        
+        return yearIncome - yearExpenses;
       case 'all':
       default:
-        // Incluir todas as transações
+        // Para todos: incluir todas as transações
         endDate = new Date();
         break;
     }
     
-    // Para saldo consolidado, incluir TODAS as transações até a data final do período
-    const cumulativeTransactions = transactions.filter(transaction => {
-      const createdDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date();
-      return createdDate <= endDate;
-    });
-    
-    const cumulativeIncome = cumulativeTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
+    // Para períodos menores que ano: incluir TODAS as transações até a data final do período
+    if (selectedPeriod !== 'year') {
+      const cumulativeTransactions = transactions.filter(transaction => {
+        const transactionDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date();
+        return transactionDate <= endDate;
+      });
       
-    const cumulativeExpenses = cumulativeTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    return cumulativeIncome - cumulativeExpenses;
+      const cumulativeIncome = cumulativeTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+        
+      const cumulativeExpenses = cumulativeTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      return cumulativeIncome - cumulativeExpenses;
+    }
   }, [transactions, selectedPeriod, selectedYear]);
 
   const getPeriodLabel = () => {
@@ -244,7 +267,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(consolidatedBalance)}</div>
-            <p className="text-xs opacity-80 mt-1">Acumulado {getPeriodLabel()}</p>
+            <p className="text-xs opacity-80 mt-1">
+              {selectedPeriod === 'year' 
+                ? `Total ${getPeriodLabel()}` 
+                : `Cumulativo até ${getPeriodLabel().replace('de ', '')}`
+              }
+            </p>
           </CardContent>
         </Card>
       </div>
