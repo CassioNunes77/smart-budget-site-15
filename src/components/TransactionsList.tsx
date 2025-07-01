@@ -57,7 +57,10 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    // Usar split para evitar problemas de timezone
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.toLocaleDateString('pt-BR');
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

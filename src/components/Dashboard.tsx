@@ -124,7 +124,49 @@ const Dashboard: React.FC<DashboardProps> = ({
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const balance = totalIncome - totalExpenses;
+  // Calcular saldo consolidado (cumulativo baseado no período selecionado)
+  const consolidatedBalance = useMemo(() => {
+    const now = new Date();
+    let cutoffDate: Date;
+    
+    switch (selectedPeriod) {
+      case 'week':
+        cutoffDate = new Date(now);
+        cutoffDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        cutoffDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+        cutoffDate = new Date(now.getFullYear(), quarterMonth, 1);
+        break;
+      case 'year':
+        const year = selectedYear || now.getFullYear();
+        cutoffDate = new Date(year, 0, 1);
+        break;
+      case 'all':
+      default:
+        cutoffDate = new Date(0); // Incluir todas as transações
+        break;
+    }
+    
+    // Para saldo consolidado, incluir todas as transações até a data de corte
+    const cumulativeTransactions = transactions.filter(transaction => {
+      const createdDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date();
+      return createdDate >= cutoffDate;
+    });
+    
+    const cumulativeIncome = cumulativeTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+      
+    const cumulativeExpenses = cumulativeTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    return cumulativeIncome - cumulativeExpenses;
+  }, [transactions, selectedPeriod, selectedYear]);
 
   const getPeriodLabel = () => {
     const now = new Date();
@@ -191,14 +233,14 @@ const Dashboard: React.FC<DashboardProps> = ({
           </CardContent>
         </Card>
 
-        <Card className={`bg-gradient-to-br ${balance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg`}>
+        <Card className={`bg-gradient-to-br ${consolidatedBalance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium opacity-90">Saldo</CardTitle>
+            <CardTitle className="text-sm font-medium opacity-90">Saldo Consolidado</CardTitle>
             <DollarSign className="h-6 w-6 opacity-90" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
-            <p className="text-xs opacity-80 mt-1">Diferença {getPeriodLabel()}</p>
+            <div className="text-2xl font-bold">{formatCurrency(consolidatedBalance)}</div>
+            <p className="text-xs opacity-80 mt-1">Acumulado {getPeriodLabel()}</p>
           </CardContent>
         </Card>
       </div>
