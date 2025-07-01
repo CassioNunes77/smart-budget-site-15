@@ -275,6 +275,19 @@ const Dashboard: React.FC = () => {
     };
   };
 
+  // Calcular saldo consolidado cumulativo (todas as transações, independente do período)
+  const getCumulativeConsolidatedBalance = () => {
+    const allConsolidatedIncome = transactions
+      .filter(t => t.type === 'income' && (!t.status || t.status === 'received'))
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const allConsolidatedExpenses = transactions
+      .filter(t => t.type === 'expense' && (!t.status || t.status === 'paid'))
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return allConsolidatedIncome - allConsolidatedExpenses;
+  };
+
   const financialSummary = getFinancialSummary();
 
   const handleLogin = (userData: User) => {
@@ -671,7 +684,7 @@ const Dashboard: React.FC = () => {
 
             {/* Cards de Saldo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className={`bg-gradient-to-br ${financialSummary.consolidatedBalance >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200`}>
+              <Card className={`bg-gradient-to-br ${getCumulativeConsolidatedBalance() >= 0 ? 'from-blue-600 to-blue-700' : 'from-orange-500 to-orange-600'} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200`}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium opacity-90">Saldo Consolidado</CardTitle>
                   <div className="flex items-center gap-2">
@@ -688,9 +701,9 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {showBalance ? formatCurrency(financialSummary.consolidatedBalance, currency) : '••••••'}
+                    {showBalance ? formatCurrency(getCumulativeConsolidatedBalance(), currency) : '••••••'}
                   </div>
-                  <p className="text-xs opacity-80 mt-1">Apenas valores confirmados</p>
+                  <p className="text-xs opacity-80 mt-1">Saldo total acumulado</p>
                 </CardContent>
               </Card>
 
