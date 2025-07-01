@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -128,6 +127,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const consolidatedBalance = useMemo(() => {
     const now = new Date();
     let endDate: Date;
+    let startDate: Date | null = null; // usado apenas para o filtro de ano
     
     switch (selectedPeriod) {
       case 'week':
@@ -135,29 +135,33 @@ const Dashboard: React.FC<DashboardProps> = ({
         endDate = new Date(now);
         break;
       case 'month':
-        // Incluir todas as transações até o final do mês atual
+        // Incluir todas as transações até o final do mês atual (cumulativo)
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         break;
       case 'quarter':
-        // Incluir todas as transações até o final do trimestre atual
+        // Incluir todas as transações até o final do trimestre atual (cumulativo)
         const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
         endDate = new Date(now.getFullYear(), quarterMonth + 3, 0);
         break;
       case 'year':
-        // Incluir todas as transações até o final do ano selecionado
+        // Para o filtro de ano, o saldo deve considerar APENAS transações dentro desse ano
         const year = selectedYear || now.getFullYear();
+        startDate = new Date(year, 0, 1);
         endDate = new Date(year, 11, 31);
         break;
       case 'all':
       default:
-        // Incluir todas as transações
+        // Incluir todas as transações disponíveis
         endDate = new Date();
         break;
     }
     
-    // Para saldo consolidado, incluir TODAS as transações até a data final do período
+    // Filtrar transações cumulativas conforme regra definida
     const cumulativeTransactions = transactions.filter(transaction => {
       const createdDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date();
+      if (selectedPeriod === 'year' && startDate) {
+        return createdDate >= startDate && createdDate <= endDate;
+      }
       return createdDate <= endDate;
     });
     

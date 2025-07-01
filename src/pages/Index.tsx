@@ -270,7 +270,60 @@ const Dashboard: React.FC = () => {
       totalExpenses: consolidatedExpenses + pendingExpenses,
       consolidatedExpenses,
       pendingExpenses,
-      consolidatedBalance: consolidatedIncome - consolidatedExpenses,
+      // Saldo Consolidado cumulativo conforme regras de período
+      consolidatedBalance: (() => {
+        const now = new Date();
+        let endDate: Date;
+        let startDate: Date | null = null; // apenas usado para o filtro de ano
+
+        switch (dashboardPeriod) {
+          case 'week':
+            endDate = new Date(now);
+            break;
+          case 'month':
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+          case 'quarter':
+            const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+            endDate = new Date(now.getFullYear(), quarterMonth + 3, 0);
+            break;
+          case 'year':
+            const year = dashboardYear;
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 11, 31);
+            break;
+          case 'all':
+          default:
+            endDate = new Date();
+            break;
+        }
+
+        // Transações cumulativas considerando status confirmados
+        const cumulativeTransactions = transactions.filter(t => {
+          const transactionDate = new Date(t.date);
+          const isConfirmed = t.type === 'income'
+            ? (!t.status || t.status === 'received')
+            : (!t.status || t.status === 'paid');
+
+          if (!isConfirmed) return false;
+
+          if (dashboardPeriod === 'year' && startDate) {
+            return transactionDate >= startDate && transactionDate <= endDate;
+          }
+
+          return transactionDate <= endDate;
+        });
+
+        const cumulativeIncome = cumulativeTransactions
+          .filter(t => t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const cumulativeExpenses = cumulativeTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        return cumulativeIncome - cumulativeExpenses;
+      })(),
       totalBalance: (consolidatedIncome + pendingIncome) - (consolidatedExpenses + pendingExpenses)
     };
   };
