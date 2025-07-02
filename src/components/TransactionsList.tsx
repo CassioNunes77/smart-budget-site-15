@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search } from 'lucide-react';
+import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search, DollarSign } from 'lucide-react';
 import CategoryIcon, { getCategoryBadgeColor } from '@/components/CategoryIcon';
 
 interface Transaction {
@@ -198,6 +197,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
+  const projectedBalance = totalIncome - totalExpense;
+
   if (transactions.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -209,7 +210,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
   return (
     <div className="space-y-4">
       {showTotals && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -229,6 +230,17 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                   <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</p>
                 </div>
                 <TrendingDown className="w-8 h-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Saldo Projetado</p>
+                  <p className={`text-2xl font-bold ${projectedBalance >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{formatCurrency(projectedBalance)}</p>
+                </div>
+                <DollarSign className={`w-8 h-8 ${projectedBalance >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
               </div>
             </CardContent>
           </Card>
