@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
   const [migrationInProgress, setMigrationInProgress] = useState(false);
   
   // Estado do filtro de período do Dashboard
-  const [dashboardPeriod, setDashboardPeriod] = useState<PeriodType>('month');
+  const [dashboardPeriod, setDashboardPeriod] = useState<PeriodType>('all');
   const [dashboardYear, setDashboardYear] = useState<number>(new Date().getFullYear());
   
   // Estado para navegação mensal na tela de transações
@@ -244,6 +244,8 @@ const Dashboard: React.FC = () => {
 
   const filteredTransactions = getFilteredTransactions();
   const monthlyTransactions = getMonthlyTransactions();
+
+
 
   // Calcular totais separando por status usando transações filtradas
   const getFinancialSummary = () => {
