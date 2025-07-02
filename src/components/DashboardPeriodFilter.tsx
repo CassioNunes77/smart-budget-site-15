@@ -89,6 +89,18 @@ const DashboardPeriodFilter: React.FC<DashboardPeriodFilterProps> = ({
   return (
     <div className="flex items-center gap-2">
       <Calendar className="w-4 h-4 text-muted-foreground" />
+      
+      {(selectedPeriod === 'year' || selectedPeriod === 'month') && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => selectedPeriod === 'month' ? handleMonthChange('prev') : handleYearChange('prev')}
+          className="h-8 w-8 p-0"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      )}
+      
       <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
         <SelectTrigger className="w-auto min-w-[160px] h-9 border-input bg-background">
           <SelectValue>
@@ -103,29 +115,14 @@ const DashboardPeriodFilter: React.FC<DashboardPeriodFilterProps> = ({
       </Select>
       
       {(selectedPeriod === 'year' || selectedPeriod === 'month') && (
-        <div className="flex items-center gap-1 ml-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => selectedPeriod === 'month' ? handleMonthChange('prev') : handleYearChange('prev')}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          <span className="text-sm font-medium min-w-[50px] text-center">
-            {selectedPeriod === 'month' ? getMonthName(tempMonth, tempYear) : tempYear}
-          </span>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => selectedPeriod === 'month' ? handleMonthChange('next') : handleYearChange('next')}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => selectedPeriod === 'month' ? handleMonthChange('next') : handleYearChange('next')}
+          className="h-8 w-8 p-0"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       )}
     </div>
   );
