@@ -60,15 +60,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       />
 
       {/* Header com logo e navegação */}
-      <header className="relative z-20 p-4 md:p-6">
+      <header className="relative z-20 p-3 md:p-6">
         <nav className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-              <TreePine className="w-6 h-6 md:w-7 md:h-7 text-white" />
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg">
+              <TreePine className="w-4 h-4 md:w-7 md:h-7 text-white" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-white">PINEE</h1>
+            <h1 className="text-lg md:text-2xl font-bold text-white">PINEE</h1>
           </div>
           
+          {/* Badges mobile */}
+          <div className="flex md:hidden items-center space-x-2 text-green-100">
+            <span className="flex items-center space-x-1">
+              <Shield className="w-3 h-3" />
+              <span className="text-xs">Seguro</span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <Users className="w-3 h-3" />
+              <span className="text-xs">50K+</span>
+            </span>
+          </div>
+          
+          {/* Badges desktop */}
           <div className="hidden md:flex items-center space-x-6 text-green-100">
             <span className="flex items-center space-x-2">
               <Shield className="w-4 h-4" />
@@ -83,27 +96,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </header>
 
       {/* Hero Section - Seção Principal */}
-      <section className="relative z-10 px-4 md:px-6 py-8 md:py-12 mb-20">
+      <section className="relative z-10 px-3 md:px-6 py-6 md:py-12 mb-12 md:mb-20">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-6 md:gap-12 items-center">
             
             {/* Coluna Esquerda - Conteúdo Principal */}
-            <div className="space-y-6 md:space-y-8 text-center lg:text-left">
+            <div className="space-y-4 md:space-y-8 text-center lg:text-left order-2 lg:order-1">
               <ScrollReveal direction="up" delay={200}>
-                <div className="space-y-4 md:space-y-6">
+                <div className="space-y-3 md:space-y-6">
                   <div className="inline-flex items-center space-x-2 bg-green-500/20 backdrop-blur-sm px-3 md:px-4 py-2 rounded-full border border-green-400/30">
-                    <Zap className="w-4 h-4 text-green-300" />
+                    <Zap className="w-3 h-3 md:w-4 md:h-4 text-green-300" />
                     <span className="text-green-100 text-xs md:text-sm font-medium">Controle Financeiro Inteligente</span>
                   </div>
                   
-                  <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white leading-tight">
+                  <h1 className="text-2xl md:text-4xl lg:text-6xl font-bold text-white leading-tight">
                     Transforme suas
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-emerald-400 block">
                       Finanças Hoje
                     </span>
                   </h1>
                   
-                  <p className="text-lg md:text-xl text-green-100 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                  <p className="text-sm md:text-xl text-green-100 leading-relaxed max-w-lg mx-auto lg:mx-0">
                     Junte-se a milhares de pessoas que já transformaram suas finanças com o PINEE. 
                     <strong className="text-green-300"> Controle inteligente, resultados reais.</strong>
                   </p>
@@ -129,49 +142,49 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
 
               {/* Estatísticas Animadas */}
               <ScrollReveal direction="up" delay={600}>
-                <div className="grid grid-cols-3 gap-4 md:gap-6 py-6 md:py-8">
+                <div className="grid grid-cols-3 gap-2 md:gap-6 py-4 md:py-8">
                   <div className="text-center">
                     <AnimatedCounter end={50} suffix="K+" />
-                    <p className="text-green-200 text-xs md:text-sm mt-1">Usuários Ativos</p>
+                    <p className="text-green-200 text-xs mt-1">Usuários Ativos</p>
                   </div>
                   <div className="text-center">
                     <AnimatedCounter end={98} suffix="%" />
-                    <p className="text-green-200 text-xs md:text-sm mt-1">Satisfação</p>
+                    <p className="text-green-200 text-xs mt-1">Satisfação</p>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-1">
                       <AnimatedCounter end={4.9} />
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      <Star className="w-3 h-3 md:w-4 md:h-4 fill-yellow-400 text-yellow-400" />
                     </div>
-                    <p className="text-green-200 text-xs md:text-sm mt-1">Avaliação</p>
+                    <p className="text-green-200 text-xs mt-1">Avaliação</p>
                   </div>
                 </div>
               </ScrollReveal>
             </div>
 
             {/* Coluna Direita - Card de Login */}
-            <div className="flex justify-center lg:justify-end">
+            <div className="flex justify-center lg:justify-end order-1 lg:order-2">
               <ScrollReveal direction="right" delay={300}>
-                <InteractiveCard className="w-full max-w-md">
+                <InteractiveCard className="w-full max-w-sm md:max-w-md">
                   <Card className="bg-white/95 backdrop-blur-lg border-0 shadow-2xl">
-                    <CardHeader className="text-center space-y-4 pb-6 md:pb-8 px-6 md:px-8 pt-6 md:pt-8">
-                      <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                        <TreePine className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                    <CardHeader className="text-center space-y-3 md:space-y-4 pb-4 md:pb-8 px-4 md:px-8 pt-4 md:pt-8">
+                      <div className="mx-auto w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
+                        <TreePine className="w-6 h-6 md:w-8 md:h-8 text-white" />
                       </div>
                       <div>
-                        <CardTitle className="text-xl md:text-2xl font-bold text-gray-900">Comece Agora</CardTitle>
-                        <p className="text-green-600 font-medium mt-2">É Grátis!</p>
+                        <CardTitle className="text-lg md:text-2xl font-bold text-gray-900">Comece Agora</CardTitle>
+                        <p className="text-green-600 font-medium mt-1 md:mt-2 text-sm md:text-base">É Grátis!</p>
                       </div>
                     </CardHeader>
                     
-                    <CardContent className="space-y-4 md:space-y-6 px-6 md:px-8 pb-6 md:pb-8">
+                    <CardContent className="space-y-3 md:space-y-6 px-4 md:px-8 pb-4 md:pb-8">
                       {/* Urgência e Escassez */}
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 md:p-4 rounded-xl border border-green-200">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Clock className="w-4 h-4 text-green-600 flex-shrink-0" />
-                          <span className="text-sm font-semibold text-green-800">Oferta Especial</span>
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-2 md:p-4 rounded-lg md:rounded-xl border border-green-200">
+                        <div className="flex items-center space-x-2 mb-1 md:mb-2">
+                          <Clock className="w-3 h-3 md:w-4 md:h-4 text-green-600 flex-shrink-0" />
+                          <span className="text-xs md:text-sm font-semibold text-green-800">Oferta Especial</span>
                         </div>
-                        <p className="text-xs text-green-700 mb-2">
+                        <p className="text-xs text-green-700 mb-1 md:mb-2">
                           Primeiros 1000 usuários ganham <strong>consultoria grátis</strong>
                         </p>
                         <ProgressBar progress={87} color="bg-green-500" />
@@ -190,21 +203,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
                       <Button 
                         onClick={handleFirebaseGoogleLogin} 
                         disabled={isLoading}
-                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 h-12 md:h-14 text-sm md:text-base"
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 h-11 md:h-14 text-sm md:text-base"
                         size="lg"
                       >
-                        <svg className="w-5 h-5 mr-3 flex-shrink-0" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 flex-shrink-0" viewBox="0 0 24 24">
                           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
-                        <span className="truncate">{isLoading ? 'Entrando...' : 'Acesse Gratuitamente'}</span>
+                        <span className="truncate text-xs md:text-sm">{isLoading ? 'Entrando...' : 'Acesse Gratuitamente'}</span>
                       </Button>
                       
-                      <div className="text-center space-y-3">
-                        <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-                          <Shield className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <div className="text-center space-y-2 md:space-y-3">
+                        <div className="flex items-center justify-center space-x-2 text-xs md:text-sm text-gray-600">
+                          <Shield className="w-3 h-3 md:w-4 md:h-4 text-green-600 flex-shrink-0" />
                           <span className="text-center">Seus dados estão 100% seguros conosco</span>
                         </div>
                         
@@ -222,28 +235,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* Seção de Benefícios */}
-      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6 mb-20">
+      <section className="relative z-10 py-8 md:py-20 px-3 md:px-6 mb-12 md:mb-20">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal direction="up" delay={200}>
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
+            <div className="text-center mb-8 md:mb-16">
+              <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-white mb-3 md:mb-4">
                 Por que escolher o PINEE?
               </h2>
-              <p className="text-green-200 text-base md:text-lg max-w-2xl mx-auto">
+              <p className="text-green-200 text-sm md:text-lg max-w-2xl mx-auto">
                 Recursos desenvolvidos especialmente para transformar sua relação com o dinheiro
               </p>
             </div>
           </ScrollReveal>
 
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             <ScrollReveal direction="up" delay={300}>
               <InteractiveCard>
-                <div className="bg-white/10 backdrop-blur-sm p-6 md:p-8 rounded-2xl border border-green-300/20 h-full">
-                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mb-4 md:mb-6">
-                    <TrendingUp className="w-6 h-6 text-white" />
+                <div className="bg-white/10 backdrop-blur-sm p-4 md:p-8 rounded-xl md:rounded-2xl border border-green-300/20 h-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-6">
+                    <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 md:mb-4">Controle Inteligente</h3>
-                  <p className="text-green-200 leading-relaxed text-sm md:text-base">
+                  <h3 className="text-base md:text-xl font-bold text-white mb-2 md:mb-4">Controle Inteligente</h3>
+                  <p className="text-green-200 leading-relaxed text-xs md:text-base">
                     Algoritmos avançados analisam seus gastos e sugerem otimizações personalizadas para seu perfil.
                   </p>
                 </div>
@@ -252,12 +265,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
 
             <ScrollReveal direction="up" delay={500}>
               <InteractiveCard>
-                <div className="bg-white/10 backdrop-blur-sm p-6 md:p-8 rounded-2xl border border-green-300/20 h-full">
-                  <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mb-4 md:mb-6">
-                    <Shield className="w-6 h-6 text-white" />
+                <div className="bg-white/10 backdrop-blur-sm p-4 md:p-8 rounded-xl md:rounded-2xl border border-green-300/20 h-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-6">
+                    <Shield className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 md:mb-4">Segurança Total</h3>
-                  <p className="text-green-200 leading-relaxed text-sm md:text-base">
+                  <h3 className="text-base md:text-xl font-bold text-white mb-2 md:mb-4">Segurança Total</h3>
+                  <p className="text-green-200 leading-relaxed text-xs md:text-base">
                     Criptografia de nível bancário protege todos os seus dados. Sua privacidade é nossa prioridade.
                   </p>
                 </div>
@@ -266,12 +279,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
 
             <ScrollReveal direction="up" delay={700}>
               <InteractiveCard>
-                <div className="bg-white/10 backdrop-blur-sm p-6 md:p-8 rounded-2xl border border-green-300/20 h-full">
-                  <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center mb-4 md:mb-6">
-                    <Users className="w-6 h-6 text-white" />
+                <div className="bg-white/10 backdrop-blur-sm p-4 md:p-8 rounded-xl md:rounded-2xl border border-green-300/20 h-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-green-600 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-6">
+                    <Users className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 md:mb-4">Comunidade Ativa</h3>
-                  <p className="text-green-200 leading-relaxed text-sm md:text-base">
+                  <h3 className="text-base md:text-xl font-bold text-white mb-2 md:mb-4">Comunidade Ativa</h3>
+                  <p className="text-green-200 leading-relaxed text-xs md:text-base">
                     Faça parte de uma comunidade engajada de pessoas transformando suas finanças todos os dias.
                   </p>
                 </div>
@@ -282,14 +295,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* Seção de Testimoniais */}
-      <section className="relative z-20 py-16 md:py-20 px-4 md:px-6 bg-black/30 backdrop-blur-sm mb-20">
+      <section className="relative z-20 py-8 md:py-20 px-3 md:px-6 bg-black/30 backdrop-blur-sm mb-12 md:mb-20">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal direction="up" delay={200}>
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
+            <div className="text-center mb-8 md:mb-16">
+              <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-white mb-3 md:mb-4">
                 O que nossos usuários dizem
               </h2>
-              <p className="text-green-200 text-base md:text-lg">
+              <p className="text-green-200 text-sm md:text-lg">
                 Histórias reais de transformação financeira
               </p>
             </div>
@@ -302,23 +315,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       </section>
 
       {/* CTA Final */}
-      <section className="relative z-10 py-16 md:py-20 px-4 md:px-6">
+      <section className="relative z-10 py-8 md:py-20 px-3 md:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <ScrollReveal direction="up" delay={200}>
-            <div className="bg-gradient-to-r from-green-500/30 to-emerald-500/30 backdrop-blur-md p-8 md:p-12 rounded-3xl border border-green-300/40 shadow-2xl">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 md:mb-6">
+            <div className="bg-gradient-to-r from-green-500/30 to-emerald-500/30 backdrop-blur-md p-6 md:p-12 rounded-2xl md:rounded-3xl border border-green-300/40 shadow-2xl">
+              <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-white mb-3 md:mb-6">
                 Sua transformação financeira começa agora
               </h2>
-              <p className="text-green-200 text-base md:text-lg mb-6 md:mb-8 max-w-2xl mx-auto">
+              <p className="text-green-200 text-sm md:text-lg mb-4 md:mb-8 max-w-2xl mx-auto">
                 Não deixe para amanhã o que pode mudar sua vida hoje. 
                 Milhares já começaram, e você?
               </p>
               
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <Button 
                   onClick={handleFirebaseGoogleLogin}
                   disabled={isLoading}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 md:px-12 py-3 md:py-4 text-base md:text-lg font-semibold shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105"
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 md:px-12 py-3 md:py-4 text-sm md:text-lg font-semibold shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105"
                 >
                   {isLoading ? 'Carregando...' : 'Começar Minha Transformação'}
                 </Button>
