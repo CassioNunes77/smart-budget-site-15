@@ -128,20 +128,13 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
       
       switch (sortBy) {
         case 'dateAdded':
-          // Usar createdAt se disponível, caso contrário usar o ID como fallback
+          // Usar createdAt se disponível, caso contrário usar a data da transação como fallback
           if (a.createdAt && b.createdAt) {
             comparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
           } else {
-            // Fallback para ordenação por ID (mais recentes primeiro)
-            comparison = b.id.localeCompare(a.id);
+            // Fallback para data da transação (mais recentes primeiro)
+            comparison = new Date(b.date).getTime() - new Date(a.date).getTime();
           }
-          console.log('Ordenando por data de adição:', { 
-            aId: a.id, 
-            bId: b.id, 
-            aCreatedAt: a.createdAt, 
-            bCreatedAt: b.createdAt, 
-            comparison 
-          });
           break;
         case 'transactionDate':
           comparison = new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -153,7 +146,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
           comparison = a.description.localeCompare(b.description);
           break;
         default:
-          comparison = 0;
+          // Por padrão, ordenar por data da transação (mais recentes primeiro)
+          comparison = new Date(b.date).getTime() - new Date(a.date).getTime();
       }
       
       return comparison;

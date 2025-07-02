@@ -731,11 +731,14 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <TransactionsList 
-                  transactions={filteredTransactions.slice(0, 5)}
+                  transactions={filteredTransactions
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .slice(0, 5)}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
                   categories={categories}
+                  showTotals={false}
                 />
                 {filteredTransactions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
