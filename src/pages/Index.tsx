@@ -102,8 +102,9 @@ const Dashboard: React.FC = () => {
   const [migrationInProgress, setMigrationInProgress] = useState(false);
   
   // Estado do filtro de período do Dashboard
-  const [dashboardPeriod, setDashboardPeriod] = useState<PeriodType>('all');
+  const [dashboardPeriod, setDashboardPeriod] = useState<PeriodType>('month');
   const [dashboardYear, setDashboardYear] = useState<number>(new Date().getFullYear());
+  const [dashboardMonth, setDashboardMonth] = useState<number>(new Date().getMonth());
   
   // Estado para navegação mensal na tela de transações
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
@@ -184,36 +185,14 @@ const Dashboard: React.FC = () => {
 
   // Função para filtrar transações baseado no período do Dashboard
   const getFilteredTransactions = () => {
-    const now = new Date();
-    
     switch (dashboardPeriod) {
-      case 'week':
-        const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - now.getDay()); // Início da semana (domingo)
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6); // Fim da semana (sábado)
-        
-        return transactions.filter(t => {
-          const transactionDate = new Date(t.date);
-          return transactionDate >= weekStart && transactionDate <= weekEnd;
-        });
-        
       case 'month':
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const monthStart = new Date(dashboardYear, dashboardMonth, 1);
+        const monthEnd = new Date(dashboardYear, dashboardMonth + 1, 0);
         
         return transactions.filter(t => {
           const transactionDate = new Date(t.date);
           return transactionDate >= monthStart && transactionDate <= monthEnd;
-        });
-        
-      case 'quarter':
-        const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-        const quarterEnd = new Date(now.getFullYear(), quarterStart.getMonth() + 3, 0);
-        
-        return transactions.filter(t => {
-          const transactionDate = new Date(t.date);
-          return transactionDate >= quarterStart && transactionDate <= quarterEnd;
         });
         
       case 'year':
@@ -593,9 +572,11 @@ const Dashboard: React.FC = () => {
                 <DashboardPeriodFilter
                   selectedPeriod={dashboardPeriod}
                   selectedYear={dashboardYear}
-                  onPeriodChange={(period, year) => {
+                  selectedMonth={dashboardMonth}
+                  onPeriodChange={(period, year, month) => {
                     setDashboardPeriod(period);
-                    if (year) setDashboardYear(year);
+                    if (year !== undefined) setDashboardYear(year);
+                    if (month !== undefined) setDashboardMonth(month);
                   }}
                 />
                 <Button 
