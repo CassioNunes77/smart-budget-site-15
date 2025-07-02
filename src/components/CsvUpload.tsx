@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -218,55 +217,23 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onTransactionsImported, categorie
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-lg font-medium text-gray-800">
-            Importar CSV
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <div className="relative">
-            <Input
-              id="csv-upload"
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              disabled={isProcessing}
-              className="hidden"
-            />
-            <Button
-              onClick={() => document.getElementById('csv-upload')?.click()}
-              disabled={isProcessing}
-              className="w-full h-12 border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 hover:border-gray-400"
-              variant="outline"
-            >
-              <Upload className="w-5 h-5 mr-2" />
-              {isProcessing ? 'Processando...' : 'Selecionar arquivo'}
-            </Button>
-          </div>
-
-          <p className="text-xs text-gray-500 text-center">
-            Formato: Data, Valor, Descrição
-          </p>
-
-          {result && (
-            <Alert className={`${result.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-              <div className="flex items-center gap-2">
-                {result.success ? (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                )}
-                <AlertDescription className={`text-sm ${result.success ? 'text-green-700' : 'text-red-700'}`}>
-                  {result.message}
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+    <div className="w-full flex justify-end mb-2">
+      <Input
+        id="csv-upload"
+        type="file"
+        accept=".csv"
+        onChange={handleFileUpload}
+        disabled={isProcessing}
+        className="hidden"
+      />
+      <Button
+        onClick={() => document.getElementById('csv-upload')?.click()}
+        disabled={isProcessing}
+        variant="ghost"
+        className="text-sm text-muted-foreground px-3 h-8"
+      >
+        Importar CSV
+      </Button>
     </div>
   );
 };
