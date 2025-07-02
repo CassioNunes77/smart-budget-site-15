@@ -36,6 +36,7 @@ interface Transaction {
   isRecurring?: boolean;
   recurringFrequency?: 'monthly' | 'weekly' | 'yearly';
   recurringEndDate?: string;
+  createdAt?: string; // Timestamp de quando a transação foi criada
 }
 
 interface User {
@@ -223,6 +224,18 @@ const Dashboard: React.FC = () => {
 
   const filteredTransactions = getFilteredTransactions();
   const monthlyTransactions = getMonthlyTransactions();
+
+  // Função para obter as transações mais recentes (por data de criação)
+  const getRecentTransactions = () => {
+    return transactions
+      .sort((a, b) => {
+        // Usar createdAt se disponível, caso contrário usar a data da transação
+        const aDate = a.createdAt ? new Date(a.createdAt) : new Date(a.date);
+        const bDate = b.createdAt ? new Date(b.createdAt) : new Date(b.date);
+        return bDate.getTime() - aDate.getTime();
+      })
+      .slice(0, 5);
+  };
 
 
 
@@ -714,9 +727,7 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <TransactionsList 
-                  transactions={filteredTransactions
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .slice(0, 5)}
+                  transactions={getRecentTransactions()}
                   onEdit={openEditModal}
                   onDelete={handleDeleteTransaction}
                   onUpdateStatus={handleUpdateTransactionStatus}
