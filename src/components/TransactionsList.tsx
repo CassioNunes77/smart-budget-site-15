@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search, DollarSign } from 'lucide-react';
+import { Edit, Trash2, TrendingUp, TrendingDown, CheckCircle, Clock, Upload, Search } from 'lucide-react';
 import CategoryIcon, { getCategoryBadgeColor } from '@/components/CategoryIcon';
 
 interface Transaction {
@@ -197,8 +198,6 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const projectedBalance = totalIncome - totalExpense;
-
   if (transactions.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -340,30 +339,6 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
           </div>
         </div>
       )}
-
-      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-emerald-50 border-emerald-100">
-          <CardContent className="flex flex-col items-center py-4">
-            <TrendingUp className="w-6 h-6 text-emerald-500 mb-1" />
-            <span className="text-xs text-muted-foreground">Receita Projetada</span>
-            <span className="text-lg font-bold text-emerald-700">{formatCurrency(totalIncome)}</span>
-          </CardContent>
-        </Card>
-        <Card className="bg-red-50 border-red-100">
-          <CardContent className="flex flex-col items-center py-4">
-            <TrendingDown className="w-6 h-6 text-red-500 mb-1" />
-            <span className="text-xs text-muted-foreground">Despesa Projetada</span>
-            <span className="text-lg font-bold text-red-700">{formatCurrency(totalExpense)}</span>
-          </CardContent>
-        </Card>
-        <Card className="bg-blue-50 border-blue-100">
-          <CardContent className="flex flex-col items-center py-4">
-            <DollarSign className="w-6 h-6 text-blue-500 mb-1" />
-            <span className="text-xs text-muted-foreground">Saldo Projetado</span>
-            <span className={`text-lg font-bold ${projectedBalance >= 0 ? 'text-blue-700' : 'text-orange-600'}`}>{formatCurrency(projectedBalance)}</span>
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="space-y-3">
         {filteredTransactions.map((transaction) => {
